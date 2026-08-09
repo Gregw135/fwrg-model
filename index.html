@@ -61,8 +61,8 @@ All anchor numbers from SEC filings. Presets:
 </div>
 
 <div class="controls">
-  <div class="ctl"><label>Store growth per year <b id="vOpens"></b></label>
-    <input type="range" id="opens" min="3" max="12" step="0.5" value="8"></div>
+  <div class="ctl"><label>New restaurants per year <b id="vOpens"></b></label>
+    <input type="range" id="opens" min="25" max="100" step="5" value="55"></div>
   <div class="ctl"><label>New-store sales, $M/yr <b id="vAuv"></b></label>
     <input type="range" id="auv" min="2.2" max="3.2" step="0.05" value="2.8"></div>
   <div class="ctl"><label>Store profit margin <b id="vMargin"></b></label>
@@ -129,7 +129,7 @@ the only question is which direction. Source: <a href="https://github.com/Gregw1
 const P0 = 12.42;
 const ids = ["opens","auv","margin","gafloor","renov","build","mult","infl","spread","debtx"];
 const fmt = {
-  opens: v => (+v).toFixed(1) + "%", auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
+  opens: v => v, auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
   gafloor: v => (v*100).toFixed(1) + "%", renov: v => (v*100).toFixed(1) + "%",
   build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%",
   spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x"
@@ -139,9 +139,9 @@ const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov
 
 function preset(name) {
   const sets = {
-    base: {opens:8, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0, spread:4, debtx:0, rec:true, bb:true},
-    bull: {opens:10, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0, spread:4, debtx:0, rec:false, bb:true},
-    bear: {opens:5, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0, spread:4, debtx:0, rec:true, bb:true},
+    base: {opens:55, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0, spread:4, debtx:0, rec:true, bb:true},
+    bull: {opens:65, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0, spread:4, debtx:0, rec:false, bb:true},
+    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0, spread:4, debtx:0, rec:true, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
@@ -159,7 +159,7 @@ function model(a) {
     const yr = 2027 + i;
     const infl = Math.pow(1 + a.infl, i + 1);
     const rec = recYears.includes(yr);
-    const planned = Math.round((OLD_N + newStores) * a.opens / 100);
+    const planned = +a.opens;
     let opens = Math.min(rec ? Math.floor(planned / 2) : planned, Math.max(0, TAM - (OLD_N + newStores)));
     const prev = newStores; newStores += opens;
     const fr = 20 * infl;
