@@ -109,7 +109,7 @@ All anchor numbers from SEC filings. Presets:
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.5% of revenue
   (stock comp counted as a cash cost, so there's no separate share dilution) and declines 0.5pt a year to the
   floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down (or borrows up) to your debt
-  target, then holds a $50M cushion, then buys back stock at whatever multiple you set. Interest charged is
+  target, then buys back stock at whatever multiple you set — no cash hoarding. Interest charged is
   inflation plus the spread you set, so debt costs the same in real terms regardless of the inflation slider.
   Inflation defaults to 2% — set it to 0 to see everything in today's dollars, with real returns. Recession
   years knock 5% off traffic, 2 points off margins, and halve openings. Store count is NOT capped — past ~2,000 company restaurants you're
@@ -179,7 +179,6 @@ function model(a) {
     const debtTarget = a.debtx * ebitda;
     if (debt > debtTarget) { const pay = Math.min(debt - debtTarget, rem); debt -= pay; rem -= pay; }
     else if (debt < debtTarget && a.buyback && fcf > 0) { rem += debtTarget - debt; debt = debtTarget; }
-    const add = Math.min(Math.max(50 - cash, 0), rem); cash += add; rem -= add;
     let price = (a.mult * ebitda + cash - debt) / shares;
     if (rem > 0 && a.buyback) { shares -= rem / price; price = (a.mult * ebitda + cash - debt) / shares; }
     else if (rem > 0) { cash += rem; price = (a.mult * ebitda + cash - debt) / shares; }
