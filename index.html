@@ -35,7 +35,7 @@
 </head>
 <body>
 <h1>First Watch (FWRG): the 20-year model</h1>
-<p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: $12.42/share, Aug 2026.
+<p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: mid-2026 as reported — 665 restaurants (586 company-owned + 79 franchised), $293M of debt, $12.42/share.
 All anchor numbers from SEC filings. Presets:
 <button onclick="preset('base')">stressed base</button>
 <button onclick="preset('bull')">bull</button>
@@ -103,7 +103,8 @@ All anchor numbers from SEC filings. Presets:
 <details>
   <summary>How the model works (and what it deliberately ignores)</summary>
   <div style="margin-top:8px; max-width:700px">
-  <p>Existing ~613 restaurants keep their current $2.32M average volumes forever (prices rise with inflation,
+  <p>The model tracks the 586 company-owned restaurants (the 79 franchised ones only pay royalties,
+  the small flat revenue line). Existing stores keep their current $2.32M average volumes forever (prices rise with inflation,
   customer traffic flat). New restaurants open at the company's own $2.8M target. Store profit is First Watch's
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.5% of revenue
   (stock comp counted as a cash cost, so there's no separate share dilution) and declines 0.5pt a year to the
@@ -150,8 +151,8 @@ function preset(name) {
 }
 
 function model(a) {
-  const OLD_N = 613, OLD_AUV = 2.32, TAM = 1e9;
-  let newStores = 0, debt = 295, cash = 20, shares = 61.6;
+  const OLD_N = 586, OLD_AUV = 2.32, TAM = 1e9;
+  let newStores = 0, debt = 293, cash = 20, shares = 61.6;
   const recYears = a.recess ? [2031, 2039] : [];
   const rows = [];
   for (let i = 0; i < 20; i++) {
@@ -271,8 +272,8 @@ function draw(rows) {
     [{vals: rows.map(r => r.price), color: "#2a78d6", start: P0}],
     {fmt: v => "$" + Math.round(v), years,
      recDots: rows.map((r, i) => r.rec ? [i, r.price] : null).filter(Boolean), include: [P0]});
-  drawSeries("chStores", "restaurants",
-    [{vals: rows.map(r => r.stores), color: "#2a78d6", start: 613}],
+  drawSeries("chStores", "company-owned restaurants",
+    [{vals: rows.map(r => r.stores), color: "#2a78d6", start: 586}],
     {fmt: v => Math.round(v).toLocaleString(), years});
   drawSeries("chDebt", "debt (orange) and cash (gray)",
     [{vals: rows.map(r => r.debt), color: "#eb6834", start: 295},
