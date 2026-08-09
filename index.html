@@ -35,7 +35,7 @@
 </head>
 <body>
 <h1>First Watch (FWRG): the 20-year model</h1>
-<p class="sub">Adjust the assumptions; everything recomputes instantly. Runs in today's dollars (returns are real, above inflation). Starting point: $12.42/share, Aug 2026.
+<p class="sub">Adjust the assumptions; everything recomputes instantly. The URL updates as you drag — copy it to share your scenario. Runs in today's dollars (returns are real, above inflation). Starting point: $12.42/share, Aug 2026.
 All anchor numbers from SEC filings. Presets:
 <button onclick="preset('base')">stressed base</button>
 <button onclick="preset('bull')">bull</button>
@@ -134,6 +134,7 @@ function preset(name) {
   document.getElementById("recess").checked = s.rec;
   document.getElementById("buyback").checked = s.bb;
   update();
+  stateToHash();
 }
 
 function model(a) {
@@ -277,8 +278,25 @@ function draw(rows) {
     {fmt: v => "$" + (v < 3 ? v.toFixed(1) : Math.round(v)) + "B", years});
 }
 
-ids.forEach(id => document.getElementById(id).addEventListener("input", update));
-["recess", "buyback", "pctgrow"].forEach(id => document.getElementById(id).addEventListener("change", update));
+function stateToHash() {
+  const parts = ids.map(id => id + "=" + document.getElementById(id).value);
+  ["recess", "buyback", "pctgrow"].forEach(id =>
+    parts.push(id + "=" + (document.getElementById(id).checked ? 1 : 0)));
+  history.replaceState(null, "", "#" + parts.join("&"));
+}
+function hashToState() {
+  if (!location.hash) return;
+  location.hash.slice(1).split("&").forEach(kv => {
+    const [k, v] = kv.split("=");
+    const el = document.getElementById(k);
+    if (!el) return;
+    if (el.type === "checkbox") el.checked = v === "1"; else el.value = v;
+  });
+}
+ids.forEach(id => document.getElementById(id).addEventListener("input", () => { update(); stateToHash(); }));
+["recess", "buyback", "pctgrow"].forEach(id =>
+  document.getElementById(id).addEventListener("change", () => { update(); stateToHash(); }));
+hashToState();
 update();
 </script>
 </body>
