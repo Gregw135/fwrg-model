@@ -35,7 +35,7 @@
 </head>
 <body>
 <h1>First Watch (FWRG): the 20-year model</h1>
-<p class="sub">Adjust the assumptions; everything recomputes instantly. The URL updates as you drag — copy it to share your scenario. Runs in today's dollars (returns are real, above inflation). Starting point: $12.42/share, Aug 2026.
+<p class="sub">Adjust the assumptions; everything recomputes instantly. Runs in today's dollars (returns are real, above inflation). Starting point: $12.42/share, Aug 2026.
 All anchor numbers from SEC filings. Presets:
 <button onclick="preset('base')">stressed base</button>
 <button onclick="preset('bull')">bull</button>
@@ -77,6 +77,10 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="mult" min="5" max="14" step="0.5" value="9"></div>
   <div class="ctl"><label>Inflation (0 = today's dollars, real returns) <b id="vInfl"></b></label>
     <input type="range" id="infl" min="0" max="0.04" step="0.0025" value="0"></div>
+  <div class="ctl"><label>Interest rate, points above inflation <b id="vSpread"></b></label>
+    <input type="range" id="spread" min="1" max="8" step="0.5" value="4"></div>
+  <div class="ctl"><label>Debt target, × EBITDA <b id="vDebtx"></b></label>
+    <input type="range" id="debtx" min="0" max="2.5" step="0.25" value="1"></div>
 </div>
 <div class="toggles">
   <label><input type="checkbox" id="recess" checked> two recession years (2031, 2039)</label>
@@ -97,12 +101,11 @@ All anchor numbers from SEC filings. Presets:
   customer traffic flat). New restaurants open at the company's own $2.8M target. Store profit is First Watch's
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.5% of revenue
   (stock comp counted as a cash cost, so there's no separate share dilution) and declines 0.5pt a year to the
-  floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down to 1x EBITDA, then holds a $50M
-  cushion, then buys back stock at whatever multiple you set. (Holding modest permanent debt beats paying it
-  off — buybacks at these multiples out-earn the 6.3% the debt costs.) Recession
+  floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down (or borrows up) to your debt
+  target, then holds a $50M cushion, then buys back stock at whatever multiple you set. Interest charged is
+  inflation plus the spread you set, so debt costs the same in real terms regardless of the inflation slider. Recession
   years knock 5% off traffic, 2 points off margins, and halve openings. Store count is NOT capped — past ~2,000 company restaurants you're
-  betting the whitespace is bigger than management's stated 2,200-location market. Taxes: 24% of profit after renovation and
-  interest. Interest: 6.3%.</p>
+  betting the whitespace is bigger than management's stated 2,200-location market. Taxes: 24% of profit after renovation and interest.</p>
   <p style="margin-top:8px">Things to try: move the multiple slider with buybacks on, then off — with buybacks on, the
 20-year return barely cares what multiple the market pays, because a cheap stock lets the company retire more of
 itself. The buyback is the gyroscope. With inflation at 0, everything is in 2026 dollars and the returns shown are real (on top of inflation). Deliberately ignored: depreciation beyond renovation, franchise growth,
@@ -116,27 +119,27 @@ the only question is which direction. Source: <a href="https://github.com/Gregw1
 
 <script>
 const P0 = 12.42;
-const ids = ["opens","auv","margin","gafloor","renov","build","mult","infl"];
+const ids = ["opens","auv","margin","gafloor","renov","build","mult","infl","spread","debtx"];
 const fmt = {
   opens: v => v, auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
   gafloor: v => (v*100).toFixed(1) + "%", renov: v => (v*100).toFixed(1) + "%",
-  build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%"
+  build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%",
+  spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x"
 };
 const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov:"vRenov",
-              build:"vBuild", mult:"vMult", infl:"vInfl" };
+              build:"vBuild", mult:"vMult", infl:"vInfl", spread:"vSpread", debtx:"vDebtx" };
 
 function preset(name) {
   const sets = {
-    base: {opens:50, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0, rec:true, bb:true},
-    bull: {opens:60, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0, rec:false, bb:true},
-    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0, rec:true, bb:true},
+    base: {opens:50, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0, spread:4, debtx:1, rec:true, bb:true},
+    bull: {opens:60, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0, spread:4, debtx:1, rec:false, bb:true},
+    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0, spread:4, debtx:1, rec:true, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
   document.getElementById("recess").checked = s.rec;
   document.getElementById("buyback").checked = s.bb;
   update();
-  stateToHash();
 }
 
 function model(a) {
@@ -159,12 +162,14 @@ function model(a) {
     const ebitda = (rev - fr) * margin + fr - gaPct * rev;
     const renov = a.renov * rev;
     const gcapex = opens * (a.build + 0.235) * infl;
-    const interest = debt * 0.063;
+    const interest = debt * (a.infl + a.spread / 100);
     const taxes = Math.max(0, 0.24 * (ebitda - renov - interest));
     const ni = (ebitda - renov - interest) - taxes;
     const fcf = ebitda - interest - taxes - renov - gcapex;
     let rem = Math.max(fcf, 0);
-    if (debt > ebitda) { const pay = Math.min(debt - ebitda, rem); debt -= pay; rem -= pay; }
+    const debtTarget = a.debtx * ebitda;
+    if (debt > debtTarget) { const pay = Math.min(debt - debtTarget, rem); debt -= pay; rem -= pay; }
+    else if (debt < debtTarget && a.buyback) { rem += debtTarget - debt; debt = debtTarget; }
     const add = Math.min(Math.max(50 - cash, 0), rem); cash += add; rem -= add;
     if (fcf < 0) { debt -= fcf; rem = 0; }
     let price = (a.mult * ebitda + cash - debt) / shares;
@@ -281,25 +286,8 @@ function draw(rows) {
     {fmt: v => "$" + (v < 3 ? v.toFixed(1) : Math.round(v)) + "B", years});
 }
 
-function stateToHash() {
-  const parts = ids.map(id => id + "=" + document.getElementById(id).value);
-  ["recess", "buyback", "pctgrow"].forEach(id =>
-    parts.push(id + "=" + (document.getElementById(id).checked ? 1 : 0)));
-  history.replaceState(null, "", "#" + parts.join("&"));
-}
-function hashToState() {
-  if (!location.hash) return;
-  location.hash.slice(1).split("&").forEach(kv => {
-    const [k, v] = kv.split("=");
-    const el = document.getElementById(k);
-    if (!el) return;
-    if (el.type === "checkbox") el.checked = v === "1"; else el.value = v;
-  });
-}
-ids.forEach(id => document.getElementById(id).addEventListener("input", () => { update(); stateToHash(); }));
-["recess", "buyback", "pctgrow"].forEach(id =>
-  document.getElementById(id).addEventListener("change", () => { update(); stateToHash(); }));
-hashToState();
+ids.forEach(id => document.getElementById(id).addEventListener("input", update));
+["recess", "buyback", "pctgrow"].forEach(id => document.getElementById(id).addEventListener("change", update));
 update();
 </script>
 </body>
