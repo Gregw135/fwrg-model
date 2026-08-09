@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First Watch (FWRG) — 20-Year Owner-Return Model</title>
+<style>
+  :root { --ink:#0b0b0b; --sec:#52514e; --muted:#898781; --grid:#e1e0d9; --blue:#2a78d6; --orange:#eb6834; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; color:var(--ink); background:#fff;
+         max-width:880px; margin:0 auto; padding:32px 20px 60px; line-height:1.5; }
+  h1 { font-size:26px; font-weight:500; margin-bottom:4px; }
+  .sub { color:var(--sec); font-size:14px; margin-bottom:24px; }
+  .results { display:flex; gap:28px; flex-wrap:wrap; margin:18px 0 8px; }
+  .stat { min-width:130px; }
+  .stat .v { font-size:30px; font-weight:500; }
+  .stat .l { font-size:12px; color:var(--muted); }
+  canvas { width:100%; height:auto; margin:10px 0 24px; }
+  .controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px 28px; margin-bottom:8px; }
+  .ctl label { font-size:13px; color:var(--sec); display:flex; justify-content:space-between; }
+  .ctl label b { color:var(--ink); font-weight:500; }
+  input[type=range] { width:100%; accent-color:var(--blue); }
+  .toggles { margin:10px 0 20px; font-size:13px; color:var(--sec); display:flex; gap:24px; flex-wrap:wrap; }
+  details { margin-top:26px; font-size:13px; color:var(--sec); }
+  summary { cursor:pointer; font-size:14px; color:var(--ink); font-weight:500; margin-bottom:6px; }
+  table { border-collapse:collapse; font-size:12.5px; margin-top:10px; width:100%; }
+  td,th { padding:4px 10px 4px 0; text-align:right; border-bottom:0.5px solid var(--grid); }
+  td:first-child,th:first-child { text-align:left; }
+  .foot { margin-top:26px; font-size:12px; color:var(--muted); }
+  a { color:var(--blue); }
+  button { font:inherit; font-size:12.5px; color:var(--sec); background:none; border:0.5px solid var(--grid);
+           border-radius:6px; padding:4px 10px; cursor:pointer; margin-right:8px; }
+  button:hover { background:#f6f5f2; }
+</style>
+</head>
+<body>
+<h1>First Watch (FWRG): the 20-year model</h1>
+<p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: $12.42/share, Aug 2026.
+All anchor numbers from SEC filings. Presets:
+<button onclick="preset('base')">stressed base</button>
+<button onclick="preset('bull')">bull</button>
+<button onclick="preset('bear')">bear</button>
+</p>
+
+<div class="results">
+  <div class="stat"><div class="v" id="oPrice">–</div><div class="l">2046 share price</div></div>
+  <div class="stat"><div class="v" id="oCagr">–</div><div class="l">return per year, 20 yrs</div></div>
+  <div class="stat"><div class="v" id="oMult">–</div><div class="l">multiple of today's price</div></div>
+  <div class="stat"><div class="v" id="oShares">–</div><div class="l">shares left (of 61.6M)</div></div>
+  <div class="stat"><div class="v" id="o3yr">–</div><div class="l">3-yr return per year</div></div>
+</div>
+
+<canvas id="chart" width="1720" height="640"></canvas>
+
+<div class="controls">
+  <div class="ctl"><label>New restaurants per year <b id="vOpens"></b></label>
+    <input type="range" id="opens" min="25" max="100" step="5" value="50"></div>
+  <div class="ctl"><label>New-store sales, $M/yr <b id="vAuv"></b></label>
+    <input type="range" id="auv" min="2.2" max="3.2" step="0.05" value="2.8"></div>
+  <div class="ctl"><label>Store profit margin <b id="vMargin"></b></label>
+    <input type="range" id="margin" min="0.14" max="0.22" step="0.005" value="0.185"></div>
+  <div class="ctl"><label>Overhead floor, % of revenue <b id="vGa"></b></label>
+    <input type="range" id="gafloor" min="0.04" max="0.09" step="0.005" value="0.05"></div>
+  <div class="ctl"><label>Renovation, % of revenue <b id="vRenov"></b></label>
+    <input type="range" id="renov" min="0.01" max="0.04" step="0.001" value="0.023"></div>
+  <div class="ctl"><label>Build cost per store, $M <b id="vBuild"></b></label>
+    <input type="range" id="build" min="1.4" max="2.6" step="0.1" value="1.8"></div>
+  <div class="ctl"><label>Market's EV/EBITDA multiple <b id="vMult"></b></label>
+    <input type="range" id="mult" min="5" max="14" step="0.5" value="9"></div>
+  <div class="ctl"><label>Inflation (= price increases) <b id="vInfl"></b></label>
+    <input type="range" id="infl" min="0.01" max="0.04" step="0.0025" value="0.025"></div>
+</div>
+<div class="toggles">
+  <label><input type="checkbox" id="recess" checked> two recession years (2031, 2039)</label>
+  <label><input type="checkbox" id="buyback" checked> buy back stock with spare cash</label>
+</div>
+
+<details>
+  <summary>Year-by-year detail</summary>
+  <table id="tbl"></table>
+</details>
+
+<details>
+  <summary>How the model works (and what it deliberately ignores)</summary>
+  <div style="margin-top:8px; max-width:700px">
+  <p>Existing ~613 restaurants keep their current $2.32M average volumes forever (prices rise with inflation,
+  customer traffic flat). New restaurants open at the company's own $2.8M target. Store profit is First Watch's
+  reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.5% of revenue
+  (stock comp counted as a cash cost, so there's no separate share dilution) and declines 0.5pt a year to the
+  floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt
+  down to 1x EBITDA, then holds a $50M cushion, then buys back stock at whatever multiple you set. Recession
+  years knock 5% off traffic, 2 points off margins, and halve openings. Company store count is capped at
+  ~2,050 (management's 2,200+ total market including franchises). Taxes: 24% of profit after renovation and
+  interest. Interest: 6.3%.</p>
+  <p style="margin-top:8px">Deliberately ignored: real depreciation beyond renovation, franchise growth,
+  new dayparts, any multiple re-rating, and anything going right that isn't already proven.</p>
+  </div>
+</details>
+
+<p class="foot">Anchor data from First Watch Restaurant Group SEC filings (10-Ks 2021–2025, Q2 2026 10-Q,
+Aug 2026 investor deck). This is a toy model for a blog post, not investment advice — it will be wrong,
+the only question is which direction. Source: <a href="https://github.com/Gregw135/fwrg-model">github.com/Gregw135/fwrg-model</a></p>
+
+<script>
+const P0 = 12.42;
+const ids = ["opens","auv","margin","gafloor","renov","build","mult","infl"];
+const fmt = {
+  opens: v => v, auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
+  gafloor: v => (v*100).toFixed(1) + "%", renov: v => (v*100).toFixed(1) + "%",
+  build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%"
+};
+const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov:"vRenov",
+              build:"vBuild", mult:"vMult", infl:"vInfl" };
+
+function preset(name) {
+  const sets = {
+    base: {opens:50, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0.025, rec:true, bb:true},
+    bull: {opens:60, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0.025, rec:false, bb:true},
+    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0.03, rec:true, bb:true},
+  };
+  const s = sets[name];
+  ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
+  document.getElementById("recess").checked = s.rec;
+  document.getElementById("buyback").checked = s.bb;
+  update();
+}
+
+function model(a) {
+  const OLD_N = 613, OLD_AUV = 2.32, TAM = 2050;
+  let newStores = 0, debt = 295, cash = 20, shares = 61.6;
+  const recYears = a.recess ? [2031, 2039] : [];
+  const rows = [];
+  for (let i = 0; i < 20; i++) {
+    const yr = 2027 + i;
+    const infl = Math.pow(1 + a.infl, i + 1);
+    const rec = recYears.includes(yr);
+    let opens = Math.min(rec ? Math.floor(a.opens / 2) : a.opens, Math.max(0, TAM - (OLD_N + newStores)));
+    const prev = newStores; newStores += opens;
+    const fr = 20 * infl;
+    const revReal = OLD_N * OLD_AUV + (prev + newStores) / 2 * a.auv;
+    const rev = revReal * infl * (rec ? 0.95 : 1) + fr;
+    const margin = a.margin - (rec ? 0.02 : 0);
+    const gaPct = Math.max(0.105 - 0.005 * (i + 1), a.gafloor);
+    const ebitda = (rev - fr) * margin + fr - gaPct * rev;
+    const renov = a.renov * rev;
+    const gcapex = opens * (a.build + 0.235) * infl;
+    const interest = debt * 0.063;
+    const taxes = Math.max(0, 0.24 * (ebitda - renov - interest));
+    const fcf = ebitda - interest - taxes - renov - gcapex;
+    let rem = Math.max(fcf, 0);
+    if (debt > ebitda) { const pay = Math.min(debt - ebitda, rem); debt -= pay; rem -= pay; }
+    const add = Math.min(Math.max(50 - cash, 0), rem); cash += add; rem -= add;
+    if (fcf < 0) { debt -= fcf; rem = 0; }
+    let price = (a.mult * ebitda + cash - debt) / shares;
+    if (rem > 0 && a.buyback) { shares -= rem / price; price = (a.mult * ebitda + cash - debt) / shares; }
+    else if (rem > 0) { cash += rem; price = (a.mult * ebitda + cash - debt) / shares; }
+    rows.push({yr, stores: OLD_N + newStores, rev, ebitda, fcf, debt, cash, shares, price, rec});
+  }
+  return rows;
+}
+
+function update() {
+  const a = {};
+  ids.forEach(id => a[id === "gafloor" ? "gafloor" : id] = +document.getElementById(id).value);
+  a.recess = document.getElementById("recess").checked;
+  a.buyback = document.getElementById("buyback").checked;
+  ids.forEach(id => document.getElementById(lbl[id]).textContent = fmt[id](a[id]));
+  const rows = model(a);
+  const last = rows[rows.length - 1];
+  const cagr = Math.pow(last.price / P0, 1 / 20) - 1;
+  const c3 = Math.pow(rows[2].price / P0, 1 / 3) - 1;
+  document.getElementById("oPrice").textContent = "$" + Math.round(last.price);
+  document.getElementById("oCagr").textContent = (cagr * 100).toFixed(1) + "%";
+  document.getElementById("oCagr").style.color = cagr >= 0.10 ? "#0a7a3d" : (cagr >= 0 ? "" : "#a32d2d");
+  document.getElementById("oMult").textContent = (last.price / P0).toFixed(1) + "x";
+  document.getElementById("oShares").textContent = last.shares.toFixed(1) + "M";
+  document.getElementById("o3yr").textContent = (c3 * 100).toFixed(1) + "%";
+  draw(rows);
+  const tbl = document.getElementById("tbl");
+  let h = "<tr><th>year</th><th>stores</th><th>revenue</th><th>EBITDA</th><th>free cash</th><th>debt</th><th>shares</th><th>price</th></tr>";
+  rows.forEach(r => {
+    h += `<tr${r.rec ? ' style="color:#a32d2d"' : ''}><td>${r.yr}${r.rec ? " (recession)" : ""}</td><td>${r.stores}</td><td>$${Math.round(r.rev).toLocaleString()}M</td><td>$${Math.round(r.ebitda)}M</td><td>$${Math.round(r.fcf)}M</td><td>$${Math.round(r.debt)}M</td><td>${r.shares.toFixed(1)}M</td><td>$${r.price.toFixed(2)}</td></tr>`;
+  });
+  tbl.innerHTML = h;
+}
+
+function draw(rows) {
+  const cv = document.getElementById("chart"), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, L = 90, R = 20, T = 30, B = 60;
+  ctx.clearRect(0, 0, W, H);
+  const prices = rows.map(r => r.price);
+  const maxP = Math.max(...prices, P0) * 1.12;
+  const x = i => L + (W - L - R) * (i + 1) / rows.length;
+  const y = v => T + (H - T - B) * (1 - v / maxP);
+  ctx.strokeStyle = "#e1e0d9"; ctx.fillStyle = "#898781";
+  ctx.font = "22px Helvetica, Arial"; ctx.textAlign = "right"; ctx.lineWidth = 1;
+  const step = maxP > 300 ? 100 : (maxP > 120 ? 50 : 25);
+  for (let g = 0; g <= maxP; g += step) {
+    ctx.beginPath(); ctx.moveTo(L, y(g)); ctx.lineTo(W - R, y(g)); ctx.stroke();
+    ctx.fillText("$" + g, L - 10, y(g) + 7);
+  }
+  ctx.textAlign = "center";
+  rows.forEach((r, i) => { if (r.yr % 4 === 0 || i === rows.length - 1) ctx.fillText(r.yr, x(i), H - 26); });
+  ctx.strokeStyle = "#2a78d6"; ctx.lineWidth = 5; ctx.beginPath();
+  ctx.moveTo(L, y(P0));
+  rows.forEach((r, i) => ctx.lineTo(x(i), y(r.price)));
+  ctx.stroke();
+  rows.forEach((r, i) => {
+    if (r.rec) { ctx.fillStyle = "#e34948"; ctx.beginPath(); ctx.arc(x(i), y(r.price), 9, 0, 7); ctx.fill(); }
+  });
+  ctx.fillStyle = "#0b0b0b"; ctx.font = "500 24px Helvetica, Arial"; ctx.textAlign = "left";
+  ctx.fillText("share price if the market pays the multiple you chose", L, 22);
+}
+
+ids.forEach(id => document.getElementById(id).addEventListener("input", update));
+document.getElementById("recess").addEventListener("change", update);
+document.getElementById("buyback").addEventListener("change", update);
+update();
+</script>
+</body>
+</html>
