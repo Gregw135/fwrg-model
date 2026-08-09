@@ -62,7 +62,7 @@ All anchor numbers from SEC filings. Presets:
 
 <div class="controls">
   <div class="ctl"><label>New restaurants per year <b id="vOpens"></b></label>
-    <input type="range" id="opens" min="25" max="100" step="5" value="50"></div>
+    <input type="range" id="opens" min="25" max="100" step="5" value="60"></div>
   <div class="ctl"><label>New-store sales, $M/yr <b id="vAuv"></b></label>
     <input type="range" id="auv" min="2.2" max="3.2" step="0.05" value="2.8"></div>
   <div class="ctl"><label>Store profit margin <b id="vMargin"></b></label>
@@ -73,6 +73,12 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="renov" min="0.01" max="0.04" step="0.001" value="0.023"></div>
   <div class="ctl"><label>Build cost per store, $M <b id="vBuild"></b></label>
     <input type="range" id="build" min="1.4" max="2.6" step="0.1" value="1.8"></div>
+</div>
+
+
+<details style="margin:2px 0 20px;">
+  <summary>Advanced: market &amp; financing</summary>
+  <div class="controls" style="margin-top:12px;">
   <div class="ctl"><label>Market's EV/EBITDA multiple <b id="vMult"></b></label>
     <input type="range" id="mult" min="5" max="14" step="0.5" value="9"></div>
   <div class="ctl"><label>Inflation (0 = today's dollars, real returns) <b id="vInfl"></b></label>
@@ -82,12 +88,13 @@ All anchor numbers from SEC filings. Presets:
   <div class="ctl"><label>Debt target, × EBITDA <b id="vDebtx"></b></label>
     <input type="range" id="debtx" min="0" max="2.5" step="0.25" value="1"></div>
 </div>
-<div class="toggles">
+  <div class="toggles">
   <label><input type="checkbox" id="recess" checked> two recession years (2031, 2039)</label>
   <label><input type="checkbox" id="buyback" checked> buy back stock with spare cash</label>
   <label><input type="checkbox" id="pctgrow"> grow store count 8%/yr instead of a fixed number</label>
   
 </div>
+</details>
 
 <details>
   <summary>Year-by-year detail</summary>
@@ -131,7 +138,7 @@ const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov
 
 function preset(name) {
   const sets = {
-    base: {opens:50, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0, spread:4, debtx:1, rec:true, bb:true},
+    base: {opens:60, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0, spread:4, debtx:1, rec:true, bb:true},
     bull: {opens:60, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0, spread:4, debtx:1, rec:false, bb:true},
     bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0, spread:4, debtx:1, rec:true, bb:true},
   };
