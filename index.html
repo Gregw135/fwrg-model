@@ -107,9 +107,10 @@ All anchor numbers from SEC filings. Presets:
   <p>The model tracks the 586 company-owned restaurants (the 79 franchised ones only pay royalties,
   the small flat revenue line). Existing stores keep their current $2.32M average volumes forever (prices rise with inflation,
   customer traffic flat). New restaurants open at the company's own $2.8M target. Store profit is First Watch's
-  reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.9% of revenue (last
-  quarter's actual) and declines 0.5pt a year to the floor you set. The share count grows 1% a year from stock
-  compensation, before buybacks. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down (or borrows up) to your debt
+  reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.0% of revenue — last
+  quarter's actual cash overhead (reported G&A was 10.9%, of which ~0.9% was non-cash stock compensation;
+  that part shows up as the share count growing 1% a year instead, so nothing is counted twice). It declines
+  0.5pt a year to the floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down (or borrows up) to your debt
   target, then buys back stock at whatever multiple you set — no cash hoarding. Interest charged is
   inflation plus the spread you set, so debt costs the same in real terms regardless of the inflation slider.
   Inflation defaults to 2% — set it to 0 to see everything in today's dollars, with real returns. Recession
@@ -167,7 +168,7 @@ function model(a) {
     const revReal = OLD_N * OLD_AUV + (prev + newStores) / 2 * a.auv;
     const rev = revReal * infl * (rec ? 0.95 : 1) + fr;
     const margin = a.margin - (rec ? 0.02 : 0);
-    const gaPct = Math.max(0.109 - 0.005 * (i + 1), a.gafloor);
+    const gaPct = Math.max(0.100 - 0.005 * (i + 1), a.gafloor);
     const ebitda = (rev - fr) * margin + fr - gaPct * rev;
     const renov = a.renov * rev;
     const gcapex = opens * (a.build + 0.235) * infl;
