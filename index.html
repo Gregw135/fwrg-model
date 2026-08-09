@@ -107,7 +107,7 @@ All anchor numbers from SEC filings. Presets:
   <p>Existing ~613 restaurants keep their current $2.32M average volumes forever (prices rise with inflation,
   customer traffic flat). New restaurants open at the company's own $2.8M target. Store profit is First Watch's
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.5% of revenue
-  (stock comp counted as a cash cost, so there's no separate share dilution) and declines 1 point a year to the
+  (stock comp counted as a cash cost, so there's no separate share dilution) and declines 0.5pt a year to the
   floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down (or borrows up) to your debt
   target, then holds a $50M cushion, then buys back stock at whatever multiple you set. Interest charged is
   inflation plus the spread you set, so debt costs the same in real terms regardless of the inflation slider.
@@ -166,7 +166,7 @@ function model(a) {
     const revReal = OLD_N * OLD_AUV + (prev + newStores) / 2 * a.auv;
     const rev = revReal * infl * (rec ? 0.95 : 1) + fr;
     const margin = a.margin - (rec ? 0.02 : 0);
-    const gaPct = Math.max(0.105 - 0.01 * (i + 1), a.gafloor);
+    const gaPct = Math.max(0.105 - 0.005 * (i + 1), a.gafloor);
     const ebitda = (rev - fr) * margin + fr - gaPct * rev;
     const renov = a.renov * rev;
     const gcapex = opens * (a.build + 0.235) * infl;
