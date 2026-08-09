@@ -50,7 +50,12 @@ All anchor numbers from SEC filings. Presets:
   <div class="stat"><div class="v" id="o3yr">–</div><div class="l">3-yr return per year</div></div>
 </div>
 
-<canvas id="chart" width="1720" height="640"></canvas>
+<canvas id="chart" width="1720" height="560"></canvas>
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-bottom:20px;">
+  <canvas id="chStores" width="560" height="380"></canvas>
+  <canvas id="chDebt" width="560" height="380"></canvas>
+  <canvas id="chShares" width="560" height="380"></canvas>
+</div>
 
 <div class="controls">
   <div class="ctl"><label>New restaurants per year <b id="vOpens"></b></label>
@@ -189,32 +194,69 @@ function update() {
   tbl.innerHTML = h;
 }
 
-function draw(rows) {
-  const cv = document.getElementById("chart"), ctx = cv.getContext("2d");
-  const W = cv.width, H = cv.height, L = 90, R = 20, T = 30, B = 60;
+function drawSeries(id, title, series, opts) {
+  const cv = document.getElementById(id), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  const big = W > 900;
+  const L = big ? 90 : 78, R = big ? 20 : 14, T = big ? 34 : 40, B = big ? 60 : 44;
+  const fs = big ? 22 : 24;
   ctx.clearRect(0, 0, W, H);
-  const prices = rows.map(r => r.price);
-  const maxP = Math.max(...prices, P0) * 1.12;
-  const x = i => L + (W - L - R) * (i + 1) / rows.length;
-  const y = v => T + (H - T - B) * (1 - v / maxP);
+  const all = series.flatMap(s => s.vals).concat(opts.include || []);
+  const maxV = Math.max(...all) * 1.12 || 1;
+  const n = series[0].vals.length;
+  const x = i => L + (W - L - R) * (i + 1) / n;
+  const y = v => T + (H - T - B) * (1 - v / maxV);
   ctx.strokeStyle = "#e1e0d9"; ctx.fillStyle = "#898781";
-  ctx.font = "22px Helvetica, Arial"; ctx.textAlign = "right"; ctx.lineWidth = 1;
-  const step = maxP > 300 ? 100 : (maxP > 120 ? 50 : 25);
-  for (let g = 0; g <= maxP; g += step) {
+  ctx.font = fs + "px Helvetica, Arial"; ctx.textAlign = "right"; ctx.lineWidth = 1;
+  const rawStep = maxV / 3.5;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const step = Math.ceil(rawStep / mag) * mag;
+  for (let g = 0; g <= maxV; g += step) {
     ctx.beginPath(); ctx.moveTo(L, y(g)); ctx.lineTo(W - R, y(g)); ctx.stroke();
-    ctx.fillText("$" + g, L - 10, y(g) + 7);
+    ctx.fillText(opts.fmt(g), L - 8, y(g) + 7);
   }
   ctx.textAlign = "center";
-  rows.forEach((r, i) => { if (r.yr % 4 === 0 || i === rows.length - 1) ctx.fillText(r.yr, x(i), H - 26); });
-  ctx.strokeStyle = "#2a78d6"; ctx.lineWidth = 5; ctx.beginPath();
-  ctx.moveTo(L, y(P0));
-  rows.forEach((r, i) => ctx.lineTo(x(i), y(r.price)));
-  ctx.stroke();
-  rows.forEach((r, i) => {
-    if (r.rec) { ctx.fillStyle = "#e34948"; ctx.beginPath(); ctx.arc(x(i), y(r.price), 9, 0, 7); ctx.fill(); }
+  const yrs = opts.years;
+  yrs.forEach((yr, i) => {
+    if ((big && (yr % 4 === 0 || i === n - 1)) || (!big && (yr % 8 === 0 || i === n - 1))) {
+      ctx.textAlign = i === n - 1 ? "right" : "center";
+      ctx.fillText(yr, i === n - 1 ? W - 2 : x(i), H - (big ? 26 : 12));
+    }
   });
-  ctx.fillStyle = "#0b0b0b"; ctx.font = "500 24px Helvetica, Arial"; ctx.textAlign = "left";
-  ctx.fillText("share price if the market pays the multiple you chose", L, 22);
+  ctx.textAlign = "center";
+  series.forEach(s => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = big ? 5 : 4;
+    if (s.dash) ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    if (s.start !== undefined) ctx.moveTo(L, y(s.start)); else ctx.moveTo(x(0), y(s.vals[0]));
+    s.vals.forEach((v, i) => ctx.lineTo(x(i), y(v)));
+    ctx.stroke(); ctx.setLineDash([]);
+  });
+  if (opts.recDots) {
+    opts.recDots.forEach(([i, v]) => {
+      ctx.fillStyle = "#e34948"; ctx.beginPath(); ctx.arc(x(i), y(v), big ? 9 : 8, 0, 7); ctx.fill();
+    });
+  }
+  ctx.fillStyle = "#0b0b0b"; ctx.font = "500 " + (big ? 24 : 26) + "px Helvetica, Arial"; ctx.textAlign = "left";
+  ctx.fillText(title, L, big ? 22 : 26);
+}
+
+function draw(rows) {
+  const years = rows.map(r => r.yr);
+  drawSeries("chart", "share price if the market pays the multiple you chose",
+    [{vals: rows.map(r => r.price), color: "#2a78d6", start: P0}],
+    {fmt: v => "$" + Math.round(v), years,
+     recDots: rows.map((r, i) => r.rec ? [i, r.price] : null).filter(Boolean), include: [P0]});
+  drawSeries("chStores", "restaurants",
+    [{vals: rows.map(r => r.stores), color: "#2a78d6", start: 613}],
+    {fmt: v => Math.round(v).toLocaleString(), years});
+  drawSeries("chDebt", "debt (orange) and cash (gray)",
+    [{vals: rows.map(r => r.debt), color: "#eb6834", start: 295},
+     {vals: rows.map(r => r.cash), color: "#b4b2a9", start: 20, dash: true}],
+    {fmt: v => "$" + Math.round(v) + "M", years});
+  drawSeries("chShares", "shares outstanding",
+    [{vals: rows.map(r => r.shares), color: "#0b0b0b", start: 61.6}],
+    {fmt: v => Math.round(v) + "M", years, include: [70]});
 }
 
 ids.forEach(id => document.getElementById(id).addEventListener("input", update));
