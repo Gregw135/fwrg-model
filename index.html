@@ -81,7 +81,7 @@ All anchor numbers from SEC filings. Presets:
 <div class="toggles">
   <label><input type="checkbox" id="recess" checked> two recession years (2031, 2039)</label>
   <label><input type="checkbox" id="buyback" checked> buy back stock with spare cash</label>
-  <label><input type="checkbox" id="pctgrow"> grow store count 7%/yr instead of a fixed number</label>
+  <label><input type="checkbox" id="pctgrow"> grow store count 8%/yr instead of a fixed number</label>
 </div>
 
 <details>
@@ -146,7 +146,7 @@ function model(a) {
     const yr = 2027 + i;
     const infl = Math.pow(1 + a.infl, i + 1);
     const rec = recYears.includes(yr);
-    const planned = a.pctgrow ? Math.round((OLD_N + newStores) * 0.07) : a.opens;
+    const planned = a.pctgrow ? Math.round((OLD_N + newStores) * 0.08) : a.opens;
     let opens = Math.min(rec ? Math.floor(planned / 2) : planned, Math.max(0, TAM - (OLD_N + newStores)));
     const prev = newStores; newStores += opens;
     const fr = 20 * infl;
