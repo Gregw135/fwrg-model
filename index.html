@@ -35,7 +35,7 @@
 </head>
 <body>
 <h1>First Watch (FWRG): the 20-year model</h1>
-<p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: $12.42/share, Aug 2026.
+<p class="sub">Adjust the assumptions; everything recomputes instantly. Runs in today's dollars (returns are real, above inflation). Starting point: $12.42/share, Aug 2026.
 All anchor numbers from SEC filings. Presets:
 <button onclick="preset('base')">stressed base</button>
 <button onclick="preset('bull')">bull</button>
@@ -67,8 +67,8 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="build" min="1.4" max="2.6" step="0.1" value="1.8"></div>
   <div class="ctl"><label>Market's EV/EBITDA multiple <b id="vMult"></b></label>
     <input type="range" id="mult" min="5" max="14" step="0.5" value="9"></div>
-  <div class="ctl"><label>Inflation (= price increases) <b id="vInfl"></b></label>
-    <input type="range" id="infl" min="0.01" max="0.04" step="0.0025" value="0.025"></div>
+  <div class="ctl"><label>Inflation (0 = today's dollars, real returns) <b id="vInfl"></b></label>
+    <input type="range" id="infl" min="0" max="0.04" step="0.0025" value="0"></div>
 </div>
 <div class="toggles">
   <label><input type="checkbox" id="recess" checked> two recession years (2031, 2039)</label>
@@ -92,7 +92,7 @@ All anchor numbers from SEC filings. Presets:
   years knock 5% off traffic, 2 points off margins, and halve openings. Company store count is capped at
   ~2,050 (management's 2,200+ total market including franchises). Taxes: 24% of profit after renovation and
   interest. Interest: 6.3%.</p>
-  <p style="margin-top:8px">Deliberately ignored: real depreciation beyond renovation, franchise growth,
+  <p style="margin-top:8px">With inflation at 0, everything is in 2026 dollars and the returns shown are real (on top of inflation). Deliberately ignored: depreciation beyond renovation, franchise growth,
   new dayparts, any multiple re-rating, and anything going right that isn't already proven.</p>
   </div>
 </details>
@@ -114,9 +114,9 @@ const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov
 
 function preset(name) {
   const sets = {
-    base: {opens:50, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0.025, rec:true, bb:true},
-    bull: {opens:60, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0.025, rec:false, bb:true},
-    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0.03, rec:true, bb:true},
+    base: {opens:50, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0, rec:true, bb:true},
+    bull: {opens:60, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0, rec:false, bb:true},
+    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0, rec:true, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
