@@ -73,6 +73,7 @@ All anchor numbers from SEC filings. Presets:
 <div class="toggles">
   <label><input type="checkbox" id="recess" checked> two recession years (2031, 2039)</label>
   <label><input type="checkbox" id="buyback" checked> buy back stock with spare cash</label>
+  <label><input type="checkbox" id="pctgrow"> grow store count 7%/yr instead of a fixed number</label>
 </div>
 
 <details>
@@ -92,7 +93,9 @@ All anchor numbers from SEC filings. Presets:
   years knock 5% off traffic, 2 points off margins, and halve openings. Company store count is capped at
   ~2,050 (management's 2,200+ total market including franchises). Taxes: 24% of profit after renovation and
   interest. Interest: 6.3%.</p>
-  <p style="margin-top:8px">With inflation at 0, everything is in 2026 dollars and the returns shown are real (on top of inflation). Deliberately ignored: depreciation beyond renovation, franchise growth,
+  <p style="margin-top:8px">Things to try: move the multiple slider with buybacks on, then off — with buybacks on, the
+20-year return barely cares what multiple the market pays, because a cheap stock lets the company retire more of
+itself. The buyback is the gyroscope. With inflation at 0, everything is in 2026 dollars and the returns shown are real (on top of inflation). Deliberately ignored: depreciation beyond renovation, franchise growth,
   new dayparts, any multiple re-rating, and anything going right that isn't already proven.</p>
   </div>
 </details>
@@ -134,7 +137,8 @@ function model(a) {
     const yr = 2027 + i;
     const infl = Math.pow(1 + a.infl, i + 1);
     const rec = recYears.includes(yr);
-    let opens = Math.min(rec ? Math.floor(a.opens / 2) : a.opens, Math.max(0, TAM - (OLD_N + newStores)));
+    const planned = a.pctgrow ? Math.round((OLD_N + newStores) * 0.07) : a.opens;
+    let opens = Math.min(rec ? Math.floor(planned / 2) : planned, Math.max(0, TAM - (OLD_N + newStores)));
     const prev = newStores; newStores += opens;
     const fr = 20 * infl;
     const revReal = OLD_N * OLD_AUV + (prev + newStores) / 2 * a.auv;
@@ -164,6 +168,7 @@ function update() {
   ids.forEach(id => a[id === "gafloor" ? "gafloor" : id] = +document.getElementById(id).value);
   a.recess = document.getElementById("recess").checked;
   a.buyback = document.getElementById("buyback").checked;
+  a.pctgrow = document.getElementById("pctgrow").checked;
   ids.forEach(id => document.getElementById(lbl[id]).textContent = fmt[id](a[id]));
   const rows = model(a);
   const last = rows[rows.length - 1];
@@ -213,8 +218,7 @@ function draw(rows) {
 }
 
 ids.forEach(id => document.getElementById(id).addEventListener("input", update));
-document.getElementById("recess").addEventListener("change", update);
-document.getElementById("buyback").addEventListener("change", update);
+["recess", "buyback", "pctgrow"].forEach(id => document.getElementById(id).addEventListener("change", update));
 update();
 </script>
 </body>
