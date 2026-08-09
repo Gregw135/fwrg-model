@@ -82,6 +82,7 @@ All anchor numbers from SEC filings. Presets:
   <label><input type="checkbox" id="recess" checked> two recession years (2031, 2039)</label>
   <label><input type="checkbox" id="buyback" checked> buy back stock with spare cash</label>
   <label><input type="checkbox" id="pctgrow"> grow store count 8%/yr instead of a fixed number</label>
+  <label><input type="checkbox" id="payoff"> pay debt fully off before buying back stock</label>
 </div>
 
 <details>
@@ -97,7 +98,9 @@ All anchor numbers from SEC filings. Presets:
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.5% of revenue
   (stock comp counted as a cash cost, so there's no separate share dilution) and declines 0.5pt a year to the
   floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt
-  down to 1x EBITDA, then holds a $50M cushion, then buys back stock at whatever multiple you set. Recession
+  down to 1x EBITDA (or to zero, if you tick that box), then holds a $50M cushion, then buys back stock at
+  whatever multiple you set. Holding debt at 1x is usually the better math — buybacks at these multiples
+  yield more than the 6.3% the debt costs — but try it both ways. Recession
   years knock 5% off traffic, 2 points off margins, and halve openings. Store count is NOT capped — past ~2,000 company restaurants you're
   betting the whitespace is bigger than management's stated 2,200-location market. Taxes: 24% of profit after renovation and
   interest. Interest: 6.3%.</p>
@@ -162,7 +165,8 @@ function model(a) {
     const ni = (ebitda - renov - interest) - taxes;
     const fcf = ebitda - interest - taxes - renov - gcapex;
     let rem = Math.max(fcf, 0);
-    if (debt > ebitda) { const pay = Math.min(debt - ebitda, rem); debt -= pay; rem -= pay; }
+    const debtTarget = a.payoff ? 0 : ebitda;
+    if (debt > debtTarget) { const pay = Math.min(debt - debtTarget, rem); debt -= pay; rem -= pay; }
     const add = Math.min(Math.max(50 - cash, 0), rem); cash += add; rem -= add;
     if (fcf < 0) { debt -= fcf; rem = 0; }
     let price = (a.mult * ebitda + cash - debt) / shares;
@@ -179,6 +183,7 @@ function update() {
   a.recess = document.getElementById("recess").checked;
   a.buyback = document.getElementById("buyback").checked;
   a.pctgrow = document.getElementById("pctgrow").checked;
+  a.payoff = document.getElementById("payoff").checked;
   ids.forEach(id => document.getElementById(lbl[id]).textContent = fmt[id](a[id]));
   const rows = model(a);
   const last = rows[rows.length - 1];
@@ -280,7 +285,7 @@ function draw(rows) {
 
 function stateToHash() {
   const parts = ids.map(id => id + "=" + document.getElementById(id).value);
-  ["recess", "buyback", "pctgrow"].forEach(id =>
+  ["recess", "buyback", "pctgrow", "payoff"].forEach(id =>
     parts.push(id + "=" + (document.getElementById(id).checked ? 1 : 0)));
   history.replaceState(null, "", "#" + parts.join("&"));
 }
@@ -294,7 +299,7 @@ function hashToState() {
   });
 }
 ids.forEach(id => document.getElementById(id).addEventListener("input", () => { update(); stateToHash(); }));
-["recess", "buyback", "pctgrow"].forEach(id =>
+["recess", "buyback", "pctgrow", "payoff"].forEach(id =>
   document.getElementById(id).addEventListener("change", () => { update(); stateToHash(); }));
 hashToState();
 update();
