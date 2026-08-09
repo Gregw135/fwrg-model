@@ -98,8 +98,8 @@ All anchor numbers from SEC filings. Presets:
   (stock comp counted as a cash cost, so there's no separate share dilution) and declines 0.5pt a year to the
   floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt
   down to 1x EBITDA, then holds a $50M cushion, then buys back stock at whatever multiple you set. Recession
-  years knock 5% off traffic, 2 points off margins, and halve openings. Company store count is capped at
-  ~2,050 (management's 2,200+ total market including franchises). Taxes: 24% of profit after renovation and
+  years knock 5% off traffic, 2 points off margins, and halve openings. Store count is NOT capped — past ~2,000 company restaurants you're
+  betting the whitespace is bigger than management's stated 2,200-location market. Taxes: 24% of profit after renovation and
   interest. Interest: 6.3%.</p>
   <p style="margin-top:8px">Things to try: move the multiple slider with buybacks on, then off — with buybacks on, the
 20-year return barely cares what multiple the market pays, because a cheap stock lets the company retire more of
@@ -138,7 +138,7 @@ function preset(name) {
 }
 
 function model(a) {
-  const OLD_N = 613, OLD_AUV = 2.32, TAM = 2050;
+  const OLD_N = 613, OLD_AUV = 2.32, TAM = 1e9;
   let newStores = 0, debt = 295, cash = 20, shares = 61.6;
   const recYears = a.recess ? [2031, 2039] : [];
   const rows = [];
