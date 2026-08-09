@@ -55,6 +55,8 @@ All anchor numbers from SEC filings. Presets:
   <canvas id="chStores" width="560" height="380"></canvas>
   <canvas id="chDebt" width="560" height="380"></canvas>
   <canvas id="chShares" width="560" height="380"></canvas>
+  <canvas id="chFcf" width="560" height="380"></canvas>
+  <canvas id="chGa" width="560" height="380"></canvas>
 </div>
 
 <div class="controls">
@@ -163,7 +165,7 @@ function model(a) {
     let price = (a.mult * ebitda + cash - debt) / shares;
     if (rem > 0 && a.buyback) { shares -= rem / price; price = (a.mult * ebitda + cash - debt) / shares; }
     else if (rem > 0) { cash += rem; price = (a.mult * ebitda + cash - debt) / shares; }
-    rows.push({yr, stores: OLD_N + newStores, rev, ebitda, fcf, debt, cash, shares, price, rec});
+    rows.push({yr, stores: OLD_N + newStores, rev, ebitda, fcf, debt, cash, shares, price, rec, gaPct});
   }
   return rows;
 }
@@ -203,15 +205,16 @@ function drawSeries(id, title, series, opts) {
   ctx.clearRect(0, 0, W, H);
   const all = series.flatMap(s => s.vals).concat(opts.include || []);
   const maxV = Math.max(...all) * 1.12 || 1;
+  const minV = Math.min(0, Math.min(...all) * 1.12);
   const n = series[0].vals.length;
   const x = i => L + (W - L - R) * (i + 1) / n;
-  const y = v => T + (H - T - B) * (1 - v / maxV);
+  const y = v => T + (H - T - B) * (1 - (v - minV) / (maxV - minV));
   ctx.strokeStyle = "#e1e0d9"; ctx.fillStyle = "#898781";
   ctx.font = fs + "px Helvetica, Arial"; ctx.textAlign = "right"; ctx.lineWidth = 1;
-  const rawStep = maxV / 3.5;
+  const rawStep = (maxV - minV) / 3.5;
   const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const step = Math.ceil(rawStep / mag) * mag;
-  for (let g = 0; g <= maxV; g += step) {
+  for (let g = Math.ceil(minV / step) * step; g <= maxV; g += step) {
     ctx.beginPath(); ctx.moveTo(L, y(g)); ctx.lineTo(W - R, y(g)); ctx.stroke();
     ctx.fillText(opts.fmt(g), L - 8, y(g) + 7);
   }
@@ -224,6 +227,10 @@ function drawSeries(id, title, series, opts) {
     }
   });
   ctx.textAlign = "center";
+  if (minV < 0) {
+    ctx.strokeStyle = "#c3c2b7"; ctx.beginPath();
+    ctx.moveTo(L, y(0)); ctx.lineTo(W - R, y(0)); ctx.stroke();
+  }
   series.forEach(s => {
     ctx.strokeStyle = s.color; ctx.lineWidth = big ? 5 : 4;
     if (s.dash) ctx.setLineDash([8, 6]);
@@ -257,6 +264,12 @@ function draw(rows) {
   drawSeries("chShares", "shares outstanding",
     [{vals: rows.map(r => r.shares), color: "#0b0b0b", start: 61.6}],
     {fmt: v => Math.round(v) + "M", years, include: [70]});
+  drawSeries("chFcf", "free cash flow",
+    [{vals: rows.map(r => r.fcf), color: "#2a78d6", start: -8}],
+    {fmt: v => "$" + Math.round(v) + "M", years});
+  drawSeries("chGa", "overhead, % of revenue",
+    [{vals: rows.map(r => r.gaPct * 100), color: "#888780", start: 10.5}],
+    {fmt: v => v.toFixed(0) + "%", years, include: [12]});
 }
 
 ids.forEach(id => document.getElementById(id).addEventListener("input", update));
