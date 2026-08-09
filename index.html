@@ -175,11 +175,11 @@ function model(a) {
     const ni = (ebitda - renov - interest) - taxes;
     const fcf = ebitda - interest - taxes - renov - gcapex;
     let rem = Math.max(fcf, 0);
+    if (fcf < 0) { debt -= fcf; }
     const debtTarget = a.debtx * ebitda;
     if (debt > debtTarget) { const pay = Math.min(debt - debtTarget, rem); debt -= pay; rem -= pay; }
-    else if (debt < debtTarget && a.buyback) { rem += debtTarget - debt; debt = debtTarget; }
+    else if (debt < debtTarget && a.buyback && fcf > 0) { rem += debtTarget - debt; debt = debtTarget; }
     const add = Math.min(Math.max(50 - cash, 0), rem); cash += add; rem -= add;
-    if (fcf < 0) { debt -= fcf; rem = 0; }
     let price = (a.mult * ebitda + cash - debt) / shares;
     if (rem > 0 && a.buyback) { shares -= rem / price; price = (a.mult * ebitda + cash - debt) / shares; }
     else if (rem > 0) { cash += rem; price = (a.mult * ebitda + cash - debt) / shares; }
