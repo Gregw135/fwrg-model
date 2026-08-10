@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>First Watch (FWRG) — 20-Year Owner-Return Model</title>
+<title>First Watch (FWRG) — 10-Year Owner-Return Model</title>
 <style>
   :root { --ink:#0b0b0b; --sec:#52514e; --muted:#898781; --grid:#e1e0d9; --blue:#2a78d6; --orange:#eb6834; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -34,7 +34,7 @@
 </style>
 </head>
 <body>
-<h1>First Watch (FWRG): the 20-year model</h1>
+<h1>First Watch (FWRG): the 10-year model</h1>
 <p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: mid-2026 as reported — 665 restaurants (586 company-owned + 79 franchised), $293M of debt, $12.42/share.
 All anchor numbers from SEC filings. Presets:
 <button onclick="preset('base')">base</button>
@@ -43,8 +43,8 @@ All anchor numbers from SEC filings. Presets:
 </p>
 
 <div class="results">
-  <div class="stat"><div class="v" id="oPrice">–</div><div class="l">2046 share price</div></div>
-  <div class="stat"><div class="v" id="oCagr">–</div><div class="l">return per year, 20 yrs</div></div>
+  <div class="stat"><div class="v" id="oPrice">–</div><div class="l">2036 share price</div></div>
+  <div class="stat"><div class="v" id="oCagr">–</div><div class="l">return per year, 10 yrs</div></div>
   <div class="stat"><div class="v" id="oMult">–</div><div class="l">multiple of today's price</div></div>
   <div class="stat"><div class="v" id="oShares">–</div><div class="l">shares left (of 61.6M)</div></div>
   <div class="stat"><div class="v" id="o3yr">–</div><div class="l">3-yr return per year</div></div>
@@ -80,7 +80,7 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="debtx" min="0" max="2.5" step="0.25" value="2.25"></div>
 </div>
   <div class="toggles">
-  <label><input type="checkbox" id="recess"> two recession years (2031, 2039)</label>
+  <label><input type="checkbox" id="recess"> two recession years (2031, 2035)</label>
   <label><input type="checkbox" id="buyback" checked> buy back stock with spare cash</label>
   
 </div>
@@ -119,7 +119,7 @@ All anchor numbers from SEC filings. Presets:
   betting the whitespace is bigger than management's stated 2,200-location market. Taxes: 24% of profit after renovation and interest. If the settings drive the company's
   value below its debt, the share price floors at zero — equity holders can't lose more than everything.</p>
   <p style="margin-top:8px">Things to try: move the multiple slider with buybacks on, then off — with buybacks on, the
-20-year return barely cares what multiple the market pays, because a cheap stock lets the company retire more of
+10-year return cares less what multiple the market pays, because a cheap stock lets the company retire more of
 itself. The buyback is the gyroscope. With inflation at 0, everything is in 2026 dollars and the returns shown are real (on top of inflation). Deliberately ignored: depreciation beyond renovation, franchise growth,
   new dayparts, any multiple re-rating, and anything going right that isn't already proven.</p>
   </div>
@@ -158,9 +158,9 @@ function model(a) {
   const OLD_N = 586, OLD_AUV = 2.32, TAM = 1e9;
   let newStores = 0, debt = 293, cash = 20, shares = 61.6;
   const cohorts = [];
-  const recYears = a.recess ? [2031, 2039] : [];
+  const recYears = a.recess ? [2031, 2035] : [];
   const rows = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 10; i++) {
     const yr = 2027 + i;
     const infl = Math.pow(1 + a.infl, i + 1);
     const rec = recYears.includes(yr);
@@ -210,7 +210,7 @@ function update() {
   ids.forEach(id => document.getElementById(lbl[id]).textContent = fmt[id](a[id]));
   const rows = model(a);
   const last = rows[rows.length - 1];
-  const cagr = Math.pow(last.price / P0, 1 / 20) - 1;
+  const cagr = Math.pow(last.price / P0, 1 / 10) - 1;
   const c3 = Math.pow(rows[2].price / P0, 1 / 3) - 1;
   document.getElementById("oPrice").textContent = "$" + Math.round(last.price);
   document.getElementById("oCagr").textContent = (cagr * 100).toFixed(1) + "%";
@@ -281,7 +281,7 @@ function drawSeries(id, title, series, opts) {
 
 function draw(rows) {
   const years = rows.map(r => r.yr);
-  drawSeries("chart", "share price if the market pays the multiple you chose",
+  drawSeries("chart", "",
     [{vals: rows.map(r => r.price), color: "#2a78d6", start: P0}],
     {fmt: v => "$" + Math.round(v), years,
      recDots: rows.map((r, i) => r.rec ? [i, r.price] : null).filter(Boolean), include: [P0]});
