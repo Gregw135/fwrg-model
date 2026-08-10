@@ -116,7 +116,8 @@ All anchor numbers from SEC filings. Presets:
   inflation plus the spread you set, so debt costs the same in real terms regardless of the inflation slider.
   Inflation defaults to 2% — set it to 0 to see everything in today's dollars, with real returns. Recession
   years knock 5% off traffic, 2 points off margins, and halve openings. Store count is NOT capped — past ~2,000 company restaurants you're
-  betting the whitespace is bigger than management's stated 2,200-location market. Taxes: 24% of profit after renovation and interest.</p>
+  betting the whitespace is bigger than management's stated 2,200-location market. Taxes: 24% of profit after renovation and interest. If the settings drive the company's
+  value below its debt, the share price floors at zero — equity holders can't lose more than everything.</p>
   <p style="margin-top:8px">Things to try: move the multiple slider with buybacks on, then off — with buybacks on, the
 20-year return barely cares what multiple the market pays, because a cheap stock lets the company retire more of
 itself. The buyback is the gyroscope. With inflation at 0, everything is in 2026 dollars and the returns shown are real (on top of inflation). Deliberately ignored: depreciation beyond renovation, franchise growth,
@@ -191,9 +192,10 @@ function model(a) {
     const debtTarget = a.debtx * ebitda;
     if (debt > debtTarget) { const pay = Math.min(debt - debtTarget, rem); debt -= pay; rem -= pay; }
     else if (debt < debtTarget && a.buyback && fcf > 0) { rem += debtTarget - debt; debt = debtTarget; }
-    let price = (a.mult * ebitda + cash - debt) / shares;
-    if (rem > 0 && a.buyback) { shares -= rem / price; price = (a.mult * ebitda + cash - debt) / shares; }
-    else if (rem > 0) { cash += rem; price = (a.mult * ebitda + cash - debt) / shares; }
+    let eq = a.mult * ebitda + cash - debt;
+    let price = Math.max(eq, 0) / shares;
+    if (rem > 0 && a.buyback && eq > 0) { shares -= rem / price; eq = a.mult * ebitda + cash - debt; price = Math.max(eq, 0) / shares; }
+    else if (rem > 0) { cash += rem; price = Math.max(a.mult * ebitda + cash - debt, 0) / shares; }
     rows.push({yr, stores: OLD_N + newStores, rev, ebitda, fcf, debt, cash, shares, price, rec, gaPct, ni});
   }
   return rows;
