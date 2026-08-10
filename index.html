@@ -37,7 +37,7 @@
 <h1>First Watch (FWRG): the 20-year model</h1>
 <p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: mid-2026 as reported — 665 restaurants (586 company-owned + 79 franchised), $293M of debt, $12.42/share.
 All anchor numbers from SEC filings. Presets:
-<button onclick="preset('base')">stressed base</button>
+<button onclick="preset('base')">base</button>
 <button onclick="preset('bull')">bull</button>
 <button onclick="preset('bear')">bear</button>
 </p>
@@ -143,9 +143,9 @@ const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov
 
 function preset(name) {
   const sets = {
-    base: {opens:55, auv:2.8, margin:0.185, gafloor:0.05, renov:0.023, build:1.8, mult:9, infl:0, spread:4, debtx:0, rec:true, bb:true},
-    bull: {opens:65, auv:3.0, margin:0.195, gafloor:0.045, renov:0.02, build:1.8, mult:12, infl:0, spread:4, debtx:0, rec:false, bb:true},
-    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.065, renov:0.032, build:2.2, mult:6, infl:0, spread:4, debtx:0, rec:true, bb:true},
+    base: {opens:55, auv:2.8, margin:0.185, gafloor:0.06, renov:0.023, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
+    bull: {opens:65, auv:3.0, margin:0.195, gafloor:0.05, renov:0.02, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
+    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.075, renov:0.032, build:2.2, mult:6, infl:0.02, spread:4.5, debtx:2.25, rec:true, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
