@@ -59,7 +59,7 @@ All anchor numbers from SEC filings. Presets:
   <div class="ctl"><label>Store profit margin <b id="vMargin"></b></label>
     <input type="range" id="margin" min="0.14" max="0.22" step="0.005" value="0.185"></div>
   <div class="ctl"><label>Overhead floor, % of revenue <b id="vGa"></b></label>
-    <input type="range" id="gafloor" min="0.04" max="0.09" step="0.005" value="0.05"></div>
+    <input type="range" id="gafloor" min="0.04" max="0.09" step="0.005" value="0.06"></div>
   <div class="ctl"><label>Renovation, % of revenue <b id="vRenov"></b></label>
     <input type="range" id="renov" min="0.01" max="0.04" step="0.001" value="0.023"></div>
   <div class="ctl"><label>Build cost per store, $M <b id="vBuild"></b></label>
@@ -110,7 +110,7 @@ All anchor numbers from SEC filings. Presets:
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.0% of revenue — last
   quarter's actual cash overhead (reported G&A was 10.9%, of which ~0.9% was non-cash stock compensation;
   that part shows up as the share count growing 1% a year instead, so nothing is counted twice). It declines
-  0.5pt a year to the floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down (or borrows up) to your debt
+  0.4pt a year to the floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down (or borrows up) to your debt
   target, then buys back stock at whatever multiple you set — no cash hoarding. Interest charged is
   inflation plus the spread you set, so debt costs the same in real terms regardless of the inflation slider.
   Inflation defaults to 2% — set it to 0 to see everything in today's dollars, with real returns. Recession
@@ -168,7 +168,7 @@ function model(a) {
     const revReal = OLD_N * OLD_AUV + (prev + newStores) / 2 * a.auv;
     const rev = revReal * infl * (rec ? 0.95 : 1) + fr;
     const margin = a.margin - (rec ? 0.02 : 0);
-    const gaPct = Math.max(0.100 - 0.005 * (i + 1), a.gafloor);
+    const gaPct = Math.max(0.100 - 0.004 * (i + 1), a.gafloor);
     const ebitda = (rev - fr) * margin + fr - gaPct * rev;
     const renov = a.renov * rev;
     const gcapex = opens * (a.build + 0.235) * infl;
