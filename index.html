@@ -45,7 +45,7 @@ All anchor numbers from SEC filings. Presets:
 <div class="results">
   <div class="stat"><div class="v" id="oPrice">–</div><div class="l">2036 share price</div></div>
   <div class="stat"><div class="v" id="oCagr">–</div><div class="l">return per year, 10 yrs</div></div>
-  <div class="stat"><div class="v" id="oMult">–</div><div class="l">multiple of today's price</div></div>
+  <div class="stat"><div class="v" id="oMult">–</div><div class="l">EV/EBITDA multiple assumed</div></div>
   <div class="stat"><div class="v" id="oShares">–</div><div class="l">shares left (of 61.6M)</div></div>
   <div class="stat"><div class="v" id="o3yr">–</div><div class="l">3-yr return per year</div></div>
 </div>
@@ -215,7 +215,7 @@ function update() {
   document.getElementById("oPrice").textContent = "$" + Math.round(last.price);
   document.getElementById("oCagr").textContent = (cagr * 100).toFixed(1) + "%";
   document.getElementById("oCagr").style.color = cagr >= 0.10 ? "#0a7a3d" : (cagr >= 0 ? "" : "#a32d2d");
-  document.getElementById("oMult").textContent = (last.price / P0).toFixed(1) + "x";
+  document.getElementById("oMult").textContent = (+a.mult).toFixed(1) + "x";
   document.getElementById("oShares").textContent = last.shares.toFixed(1) + "M";
   document.getElementById("o3yr").textContent = (c3 * 100).toFixed(1) + "%";
   draw(rows);
