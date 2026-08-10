@@ -106,7 +106,8 @@ All anchor numbers from SEC filings. Presets:
   <div style="margin-top:8px; max-width:700px">
   <p>The model tracks the 586 company-owned restaurants (the 79 franchised ones only pay royalties,
   the small flat revenue line). Existing stores keep their current $2.32M average volumes forever (prices rise with inflation,
-  customer traffic flat). New restaurants open at the company's own $2.8M target. Store profit is First Watch's
+  customer traffic flat). New restaurants open 20% below the
+  company's $2.8M target and ramp to it by year three (half-weighted in the opening year for mid-year openings). Store profit is First Watch's
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.0% of revenue — last
   quarter's actual cash overhead (reported G&A was 10.9%, of which ~0.9% was non-cash stock compensation;
   that part shows up as the share count growing 1% a year instead, so nothing is counted twice). It declines
@@ -155,6 +156,7 @@ function preset(name) {
 function model(a) {
   const OLD_N = 586, OLD_AUV = 2.32, TAM = 1e9;
   let newStores = 0, debt = 293, cash = 20, shares = 61.6;
+  const cohorts = [];
   const recYears = a.recess ? [2031, 2039] : [];
   const rows = [];
   for (let i = 0; i < 20; i++) {
@@ -163,9 +165,16 @@ function model(a) {
     const rec = recYears.includes(yr);
     const planned = +a.opens;
     let opens = Math.min(rec ? Math.floor(planned / 2) : planned, Math.max(0, TAM - (OLD_N + newStores)));
-    const prev = newStores; newStores += opens;
+    newStores += opens;
+    cohorts.push(opens);
+    let newRev = 0;
+    for (let j = 0; j < cohorts.length; j++) {
+      const age = i - j;
+      const ramp = age === 0 ? 0.5 * 0.8 : age === 1 ? 0.9 : 1.0;
+      newRev += cohorts[j] * a.auv * ramp;
+    }
     const fr = 20 * infl;
-    const revReal = OLD_N * OLD_AUV + (prev + newStores) / 2 * a.auv;
+    const revReal = OLD_N * OLD_AUV + newRev;
     const rev = revReal * infl * (rec ? 0.95 : 1) + fr;
     const margin = a.margin - (rec ? 0.02 : 0);
     const gaPct = Math.max(0.100 - 0.004 * (i + 1), a.gafloor);
