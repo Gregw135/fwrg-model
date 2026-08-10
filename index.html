@@ -61,7 +61,7 @@ All anchor numbers from SEC filings. Presets:
   <div class="ctl"><label>Overhead floor, % of revenue <b id="vGa"></b></label>
     <input type="range" id="gafloor" min="0.04" max="0.09" step="0.005" value="0.06"></div>
   <div class="ctl"><label>Renovation, % of revenue <b id="vRenov"></b></label>
-    <input type="range" id="renov" min="0.01" max="0.04" step="0.001" value="0.023"></div>
+    <input type="range" id="renov" min="0.01" max="0.04" step="0.001" value="0.015"></div>
   <div class="ctl"><label>Build cost per store, $M <b id="vBuild"></b></label>
     <input type="range" id="build" min="1.4" max="2.6" step="0.1" value="1.8"></div>
 </div>
@@ -111,7 +111,7 @@ All anchor numbers from SEC filings. Presets:
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.0% of revenue — last
   quarter's actual cash overhead (reported G&A was 10.9%, of which ~0.9% was non-cash stock compensation;
   that part shows up as the share count growing 1% a year instead, so nothing is counted twice). It declines
-  0.4pt a year to the floor you set. Renovation spending defaults to Texas Roadhouse's ~2.3% of revenue. Cash flow first pays debt down (or borrows up) to your debt
+  0.4pt a year to the floor you set. Renovation spending defaults to 1.5% of revenue — light while the fleet is young (Texas Roadhouse, older and open twice the hours, runs ~2.3%). Cash flow first pays debt down (or borrows up) to your debt
   target, then buys back stock at whatever multiple you set — no cash hoarding. Interest charged is
   inflation plus the spread you set, so debt costs the same in real terms regardless of the inflation slider.
   Inflation defaults to 2% — set it to 0 to see everything in today's dollars, with real returns. Recession
@@ -143,9 +143,9 @@ const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov
 
 function preset(name) {
   const sets = {
-    base: {opens:55, auv:2.8, margin:0.185, gafloor:0.06, renov:0.023, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
-    bull: {opens:65, auv:3.0, margin:0.195, gafloor:0.05, renov:0.02, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
-    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.075, renov:0.032, build:2.2, mult:6, infl:0.02, spread:4.5, debtx:2.25, rec:true, bb:true},
+    base: {opens:55, auv:2.8, margin:0.185, gafloor:0.06, renov:0.015, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
+    bull: {opens:65, auv:3.0, margin:0.195, gafloor:0.05, renov:0.012, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
+    bear: {opens:35, auv:2.5, margin:0.165, gafloor:0.075, renov:0.03, build:2.2, mult:6, infl:0.02, spread:4.5, debtx:2.25, rec:true, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
