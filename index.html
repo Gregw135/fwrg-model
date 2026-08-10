@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>First Watch (FWRG) — 10-Year Owner-Return Model</title>
+<title>First Watch (FWRG) — Owner-Return Model</title>
 <style>
   :root { --ink:#0b0b0b; --sec:#52514e; --muted:#898781; --grid:#e1e0d9; --blue:#2a78d6; --orange:#eb6834; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -34,7 +34,7 @@
 </style>
 </head>
 <body>
-<h1>First Watch (FWRG): the 10-year model</h1>
+<h1>First Watch (FWRG): the model</h1>
 <p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: mid-2026 as reported — 665 restaurants (586 company-owned + 79 franchised), $293M of debt, $12.42/share.
 All anchor numbers from SEC filings. Presets:
 <button onclick="preset('base')">base</button>
@@ -43,8 +43,8 @@ All anchor numbers from SEC filings. Presets:
 </p>
 
 <div class="results">
-  <div class="stat"><div class="v" id="oPrice">–</div><div class="l">2036 share price</div></div>
-  <div class="stat"><div class="v" id="oCagr">–</div><div class="l">return per year, 10 yrs</div></div>
+  <div class="stat"><div class="v" id="oPrice">–</div><div class="l" id="lPrice">share price</div></div>
+  <div class="stat"><div class="v" id="oCagr">–</div><div class="l" id="lCagr">return per year</div></div>
   <div class="stat"><div class="v" id="oMult">–</div><div class="l">EV/EBITDA multiple assumed</div></div>
   <div class="stat"><div class="v" id="oShares">–</div><div class="l">shares left (of 61.6M)</div></div>
   <div class="stat"><div class="v" id="o3yr">–</div><div class="l">3-yr return per year</div></div>
@@ -64,6 +64,8 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="renov" min="0.01" max="0.04" step="0.001" value="0.015"></div>
   <div class="ctl"><label>Build cost per store, $M <b id="vBuild"></b></label>
     <input type="range" id="build" min="1.4" max="2.6" step="0.1" value="1.8"></div>
+  <div class="ctl"><label>Years to model <b id="vYears"></b></label>
+    <input type="range" id="years" min="5" max="20" step="1" value="5"></div>
 </div>
 
 
@@ -131,21 +133,22 @@ the only question is which direction. Source: <a href="https://github.com/Gregw1
 
 <script>
 const P0 = 12.42;
-const ids = ["opens","auv","margin","gafloor","renov","build","mult","infl","spread","debtx"];
+const ids = ["opens","auv","margin","gafloor","renov","build","mult","infl","spread","debtx","years"];
 const fmt = {
   opens: v => v, auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
   gafloor: v => (v*100).toFixed(1) + "%", renov: v => (v*100).toFixed(1) + "%",
   build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%",
-  spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x"
+  spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x",
+  years: v => v
 };
 const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov:"vRenov",
-              build:"vBuild", mult:"vMult", infl:"vInfl", spread:"vSpread", debtx:"vDebtx" };
+              build:"vBuild", mult:"vMult", infl:"vInfl", spread:"vSpread", debtx:"vDebtx", years:"vYears" };
 
 function preset(name) {
   const sets = {
-    base: {opens:55, auv:2.8, margin:0.185, gafloor:0.06, renov:0.015, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
-    bull: {opens:65, auv:3.0, margin:0.195, gafloor:0.05, renov:0.012, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
-    bear: {opens:50, auv:2.5, margin:0.175, gafloor:0.085, renov:0.02, build:2.0, mult:9, infl:0.02, spread:4.5, debtx:2.25, rec:false, bb:true},
+    base: {opens:55, auv:2.8, margin:0.185, gafloor:0.06, renov:0.015, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    bull: {opens:65, auv:3.0, margin:0.195, gafloor:0.05, renov:0.012, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    bear: {opens:50, auv:2.5, margin:0.175, gafloor:0.085, renov:0.02, build:2.0, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
@@ -160,7 +163,7 @@ function model(a) {
   const cohorts = [];
   const recYears = a.recess ? [2031, 2035] : [];
   const rows = [];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < a.years; i++) {
     const yr = 2027 + i;
     const infl = Math.pow(1 + a.infl, i + 1);
     const rec = recYears.includes(yr);
@@ -210,7 +213,9 @@ function update() {
   ids.forEach(id => document.getElementById(lbl[id]).textContent = fmt[id](a[id]));
   const rows = model(a);
   const last = rows[rows.length - 1];
-  const cagr = Math.pow(last.price / P0, 1 / 10) - 1;
+  const cagr = Math.pow(last.price / P0, 1 / a.years) - 1;
+  document.getElementById("lPrice").textContent = last.yr + " share price";
+  document.getElementById("lCagr").textContent = "return per year, " + a.years + " yrs";
   const c3 = Math.pow(rows[2].price / P0, 1 / 3) - 1;
   document.getElementById("oPrice").textContent = "$" + Math.round(last.price);
   document.getElementById("oCagr").textContent = (cagr * 100).toFixed(1) + "%";
@@ -252,7 +257,8 @@ function drawSeries(id, title, series, opts) {
   ctx.textAlign = "center";
   const yrs = opts.years;
   yrs.forEach((yr, i) => {
-    if ((big && (yr % 4 === 0 || i === n - 1)) || (!big && (yr % 8 === 0 || i === n - 1))) {
+    const lblStep = n <= 8 ? 2 : (big ? 4 : 8);
+    if (yr % lblStep === 0 || i === n - 1) {
       ctx.textAlign = i === n - 1 ? "right" : "center";
       ctx.fillText(yr, i === n - 1 ? W - 2 : x(i), H - (big ? 26 : 12));
     }
