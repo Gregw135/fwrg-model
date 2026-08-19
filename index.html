@@ -52,8 +52,13 @@ All anchor numbers from SEC filings. Presets:
 
 <canvas id="chart" width="1720" height="560"></canvas>
 <div class="controls">
-  <div class="ctl"><label>New restaurants per year <b id="vOpens"></b></label>
+  <div class="ctl"><div style="font-size:13px; color:var(--sec); display:flex; justify-content:flex-start; gap:14px; flex-wrap:wrap;">Growth in new restaurants:
+    <span><label style="display:inline"><input type="radio" name="gmode" id="gmodeFixed" checked> fixed per year</label>
+    &nbsp;<label style="display:inline"><input type="radio" name="gmode" id="gmodePct"> % of store base</label></span></div></div>
+  <div class="ctl" id="ctlOpens"><label>New restaurants per year <b id="vOpens"></b></label>
     <input type="range" id="opens" min="25" max="100" step="5" value="55"></div>
+  <div class="ctl" id="ctlOpensPct" style="display:none"><label>Store growth per year <b id="vOpensPct"></b></label>
+    <input type="range" id="openspct" min="0.02" max="0.15" step="0.005" value="0.10"></div>
   <div class="ctl"><label>New-store sales, $M/yr <b id="vAuv"></b></label>
     <input type="range" id="auv" min="2.2" max="3.2" step="0.05" value="2.8"></div>
   <div class="ctl"><label>Store profit margin <b id="vMargin"></b></label>
@@ -108,7 +113,9 @@ All anchor numbers from SEC filings. Presets:
   <div style="margin-top:8px; max-width:700px">
   <p>The model tracks the 586 company-owned restaurants (the 79 franchised ones only pay royalties,
   the small flat revenue line). Existing stores keep their current $2.32M average volumes forever (prices rise with inflation,
-  customer traffic flat). New restaurants open 20% below the
+  customer traffic flat). Openings are either a fixed count per year (the company's stated plan, ~55) or —
+  the international-expansion case — a constant percentage of the store base, so the opening pace itself
+  compounds: 10% for 20 years takes 586 company stores to ~3,900, far past the stated ~2,200-location US market. New restaurants open 20% below the
   company's $2.8M target and ramp to it by year three (half-weighted in the opening year for mid-year openings). Store profit is First Watch's
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.0% of revenue — last
   quarter's actual cash overhead (reported G&A was 10.9%, of which ~0.9% was non-cash stock compensation;
@@ -133,25 +140,27 @@ the only question is which direction. Source: <a href="https://github.com/Gregw1
 
 <script>
 const P0 = 12.42;
-const ids = ["opens","auv","margin","gafloor","renov","build","mult","infl","spread","debtx","years"];
+const ids = ["opens","openspct","auv","margin","gafloor","renov","build","mult","infl","spread","debtx","years"];
 const fmt = {
-  opens: v => v, auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
+  opens: v => v, openspct: v => (v*100).toFixed(1) + "%", auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
   gafloor: v => (v*100).toFixed(1) + "%", renov: v => (v*100).toFixed(1) + "%",
   build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%",
   spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x",
   years: v => v
 };
-const lbl = { opens:"vOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov:"vRenov",
+const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov:"vRenov",
               build:"vBuild", mult:"vMult", infl:"vInfl", spread:"vSpread", debtx:"vDebtx", years:"vYears" };
 
 function preset(name) {
   const sets = {
-    base: {opens:55, auv:2.8, margin:0.185, gafloor:0.06, renov:0.015, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
-    bull: {opens:65, auv:3.0, margin:0.195, gafloor:0.05, renov:0.012, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
-    bear: {opens:50, auv:2.5, margin:0.175, gafloor:0.085, renov:0.02, build:2.0, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    base: {opens:55, openspct:0.10, auv:2.8, margin:0.185, gafloor:0.06, renov:0.015, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    bull: {opens:65, openspct:0.10, auv:3.0, margin:0.195, gafloor:0.05, renov:0.012, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    bear: {opens:50, openspct:0.10, auv:2.5, margin:0.175, gafloor:0.085, renov:0.02, build:2.0, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
+  document.getElementById("gmodeFixed").checked = true;
+  document.getElementById("gmodePct").checked = false;
   document.getElementById("recess").checked = s.rec;
   document.getElementById("buyback").checked = s.bb;
   update();
@@ -167,7 +176,7 @@ function model(a) {
     const yr = 2027 + i;
     const infl = Math.pow(1 + a.infl, i + 1);
     const rec = recYears.includes(yr);
-    const planned = +a.opens;
+    const planned = a.pctMode ? Math.round(a.openspct * (OLD_N + newStores)) : +a.opens;
     let opens = Math.min(rec ? Math.floor(planned / 2) : planned, Math.max(0, TAM - (OLD_N + newStores)));
     newStores += opens;
     cohorts.push(opens);
@@ -209,6 +218,9 @@ function update() {
   ids.forEach(id => a[id === "gafloor" ? "gafloor" : id] = +document.getElementById(id).value);
   a.recess = document.getElementById("recess").checked;
   a.buyback = document.getElementById("buyback").checked;
+  a.pctMode = document.getElementById("gmodePct").checked;
+  document.getElementById("ctlOpens").style.display = a.pctMode ? "none" : "";
+  document.getElementById("ctlOpensPct").style.display = a.pctMode ? "" : "none";
 
   ids.forEach(id => document.getElementById(lbl[id]).textContent = fmt[id](a[id]));
   const rows = model(a);
@@ -313,7 +325,7 @@ function draw(rows) {
 }
 
 ids.forEach(id => document.getElementById(id).addEventListener("input", update));
-["recess", "buyback"].forEach(id => document.getElementById(id).addEventListener("change", update));
+["recess", "buyback", "gmodeFixed", "gmodePct"].forEach(id => document.getElementById(id).addEventListener("change", update));
 update();
 </script>
 </body>
