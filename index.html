@@ -59,6 +59,8 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="opens" min="25" max="100" step="5" value="55"></div>
   <div class="ctl" id="ctlOpensPct" style="display:none"><label>Store growth per year <b id="vOpensPct"></b></label>
     <input type="range" id="openspct" min="0.02" max="0.15" step="0.005" value="0.10"></div>
+  <div class="ctl"><label>Franchised openings per year (4.5% royalty) <b id="vFrOpens"></b></label>
+    <input type="range" id="fropens" min="0" max="150" step="5" value="0"></div>
   <div class="ctl"><label>New-store sales, $M/yr <b id="vAuv"></b></label>
     <input type="range" id="auv" min="2.2" max="3.2" step="0.05" value="2.8"></div>
   <div class="ctl"><label>Store profit margin <b id="vMargin"></b></label>
@@ -115,7 +117,11 @@ All anchor numbers from SEC filings. Presets:
   the small flat revenue line). Existing stores keep their current $2.32M average volumes forever (prices rise with inflation,
   customer traffic flat). Openings are either a fixed count per year (the company's stated plan, ~55) or —
   the international-expansion case — a constant percentage of the store base, so the opening pace itself
-  compounds: 10% for 20 years takes 586 company stores to ~3,900, far past the stated ~2,200-location US market. New restaurants open 20% below the
+  compounds: 10% for 20 years takes 586 company stores to ~3,900, far past the stated ~2,200-location US market.
+  Franchised openings (default zero — management currently favors company ownership) contribute only a 4.5% royalty
+  on each franchised store's sales, at the same sales target and ramp as company stores — but cost the company
+  nothing to build: the franchisee puts up the capital. That's the asset-light lever, and overhead is still charged
+  on royalty revenue, so franchise-support costs aren't ignored. New restaurants open 20% below the
   company's $2.8M target and ramp to it by year three (half-weighted in the opening year for mid-year openings). Store profit is First Watch's
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.0% of revenue — last
   quarter's actual cash overhead (reported G&A was 10.9%, of which ~0.9% was non-cash stock compensation;
@@ -140,22 +146,22 @@ the only question is which direction. Source: <a href="https://github.com/Gregw1
 
 <script>
 const P0 = 12.42;
-const ids = ["opens","openspct","auv","margin","gafloor","renov","build","mult","infl","spread","debtx","years"];
+const ids = ["opens","openspct","fropens","auv","margin","gafloor","renov","build","mult","infl","spread","debtx","years"];
 const fmt = {
-  opens: v => v, openspct: v => (v*100).toFixed(1) + "%", auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
+  opens: v => v, openspct: v => (v*100).toFixed(1) + "%", fropens: v => v, auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
   gafloor: v => (v*100).toFixed(1) + "%", renov: v => (v*100).toFixed(1) + "%",
   build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%",
   spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x",
   years: v => v
 };
-const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov:"vRenov",
+const lbl = { opens:"vOpens", openspct:"vOpensPct", fropens:"vFrOpens", auv:"vAuv", margin:"vMargin", gafloor:"vGa", renov:"vRenov",
               build:"vBuild", mult:"vMult", infl:"vInfl", spread:"vSpread", debtx:"vDebtx", years:"vYears" };
 
 function preset(name) {
   const sets = {
-    base: {opens:55, openspct:0.10, auv:2.8, margin:0.185, gafloor:0.06, renov:0.015, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
-    bull: {opens:65, openspct:0.10, auv:3.0, margin:0.195, gafloor:0.05, renov:0.012, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
-    bear: {opens:50, openspct:0.10, auv:2.5, margin:0.175, gafloor:0.085, renov:0.02, build:2.0, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    base: {opens:55, openspct:0.10, fropens:0, auv:2.8, margin:0.185, gafloor:0.06, renov:0.015, build:1.8, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    bull: {opens:65, openspct:0.10, fropens:25, auv:3.0, margin:0.195, gafloor:0.05, renov:0.012, build:1.8, mult:12, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    bear: {opens:50, openspct:0.10, fropens:0, auv:2.5, margin:0.175, gafloor:0.085, renov:0.02, build:2.0, mult:9, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
@@ -167,9 +173,9 @@ function preset(name) {
 }
 
 function model(a) {
-  const OLD_N = 586, OLD_AUV = 2.32, TAM = 1e9;
-  let newStores = 0, debt = 293, cash = 20, shares = 61.6;
-  const cohorts = [];
+  const OLD_N = 586, OLD_AUV = 2.32, TAM = 1e9, ROYALTY = 0.045;
+  let newStores = 0, newFr = 0, debt = 293, cash = 20, shares = 61.6;
+  const cohorts = [], frCohorts = [];
   const recYears = a.recess ? [2031, 2035] : [];
   const rows = [];
   for (let i = 0; i < a.years; i++) {
@@ -186,7 +192,16 @@ function model(a) {
       const ramp = age === 0 ? 0.5 * 0.8 : age === 1 ? 0.9 : 1.0;
       newRev += cohorts[j] * a.auv * ramp;
     }
-    const fr = 20 * infl;
+    const frOpens = rec ? Math.floor(+a.fropens / 2) : +a.fropens;
+    newFr += frOpens;
+    frCohorts.push(frOpens);
+    let frSales = 0;
+    for (let j = 0; j < frCohorts.length; j++) {
+      const age = i - j;
+      const ramp = age === 0 ? 0.5 * 0.8 : age === 1 ? 0.9 : 1.0;
+      frSales += frCohorts[j] * a.auv * ramp;
+    }
+    const fr = (20 + ROYALTY * frSales * (rec ? 0.95 : 1)) * infl;
     const revReal = OLD_N * OLD_AUV + newRev;
     const rev = revReal * infl * (rec ? 0.95 : 1) + fr;
     const margin = a.margin - (rec ? 0.02 : 0);
@@ -208,7 +223,7 @@ function model(a) {
     let price = Math.max(eq, 0) / shares;
     if (rem > 0 && a.buyback && eq > 0) { shares -= rem / price; eq = a.mult * ebitda + cash - debt; price = Math.max(eq, 0) / shares; }
     else if (rem > 0) { cash += rem; price = Math.max(a.mult * ebitda + cash - debt, 0) / shares; }
-    rows.push({yr, stores: OLD_N + newStores, rev, ebitda, fcf, debt, cash, shares, price, rec, gaPct, ni});
+    rows.push({yr, stores: OLD_N + newStores, frStores: 79 + newFr, rev, ebitda, fcf, debt, cash, shares, price, rec, gaPct, ni});
   }
   return rows;
 }
@@ -303,8 +318,9 @@ function draw(rows) {
     [{vals: rows.map(r => r.price), color: "#2a78d6", start: P0}],
     {fmt: v => "$" + Math.round(v), years,
      recDots: rows.map((r, i) => r.rec ? [i, r.price] : null).filter(Boolean), include: [P0]});
-  drawSeries("chStores", "company-owned restaurants",
-    [{vals: rows.map(r => r.stores), color: "#2a78d6", start: 586}],
+  drawSeries("chStores", "restaurants: company, franchised (dashed)",
+    [{vals: rows.map(r => r.stores), color: "#2a78d6", start: 586},
+     {vals: rows.map(r => r.frStores), color: "#eb6834", start: 79, dash: true}],
     {fmt: v => Math.round(v).toLocaleString(), years});
   drawSeries("chDebt", "debt (orange) and cash (gray)",
     [{vals: rows.map(r => r.debt), color: "#eb6834", start: 295},
