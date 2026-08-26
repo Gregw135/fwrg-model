@@ -63,6 +63,8 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="auv" min="2.2" max="3.2" step="0.05" value="2.8"></div>
   <div class="ctl"><label>Store profit margin <b id="vMargin"></b></label>
     <input type="range" id="margin" min="0.14" max="0.22" step="0.005" value="0.19"></div>
+  <div class="ctl"><label>Margin change, pts per year <b id="vMchg"></b></label>
+    <input type="range" id="mchg" min="-0.01" max="0.01" step="0.001" value="0"></div>
   <div class="ctl"><label>Traffic growth per year <b id="vTraffic"></b></label>
     <input type="range" id="traffic" min="-0.05" max="0.05" step="0.005" value="0"></div>
   <div class="ctl"><label>Overhead decrease/yr (starts 10.0%, floor 4%) <b id="vGa"></b></label>
@@ -116,9 +118,10 @@ All anchor numbers from SEC filings. Presets:
   <p>The model tracks the 586 company-owned restaurants. The 79 franchised ones (84 after next
   year's five committed openings — no franchise expansion modeled beyond that) contribute a flat
   $21M of royalty EBITDA every year, no growth, no inflation. Existing stores keep their current $2.32M average volumes (prices rise with inflation;
-  customer traffic changes by the traffic slider, default flat, compounding across the whole fleet). Traffic also
-  moves store margins — fixed costs don't scale with guests — at 0.35pts of margin per cumulative point of traffic,
-  so the margin slider means "margin at flat traffic." Openings are either a fixed count per year (the company's stated plan, ~55) or —
+  customer traffic changes by the traffic slider, default flat, compounding across the whole fleet — it affects
+  revenue only). Store margin starts at the margin slider and drifts by the margin-change slider each year —
+  a realistic pairing is ~0.3-0.4pts of margin lost per point of annual traffic decline, since fixed costs
+  don't scale with guests. Openings are either a fixed count per year (the company's stated plan, ~55) or —
   the default — a constant percentage of the store base (8%), so the opening pace itself
   compounds: 10% for 20 years takes 586 company stores to ~3,900, far past the stated ~2,200-location US market.
   New restaurants open 20% below the
@@ -146,23 +149,24 @@ the only question is which direction. Source: <a href="https://github.com/Gregw1
 
 <script>
 const P0 = 12.42;
-const ids = ["opens","openspct","auv","margin","traffic","gadrop","renov","build","mult","infl","spread","debtx","years"];
+const ids = ["opens","openspct","auv","margin","mchg","traffic","gadrop","renov","build","mult","infl","spread","debtx","years"];
 const fmt = {
   opens: v => v, openspct: v => (v*100).toFixed(1) + "%", auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
   traffic: v => (v > 0 ? "+" : "") + (v*100).toFixed(1) + "%",
+  mchg: v => (v > 0 ? "+" : "") + (v*100).toFixed(1) + "pts",
   gadrop: v => "−" + (v*100).toFixed(2) + "pts", renov: v => (v*100).toFixed(1) + "%",
   build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%",
   spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x",
   years: v => v
 };
-const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin", traffic:"vTraffic", gadrop:"vGa", renov:"vRenov",
+const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin", mchg:"vMchg", traffic:"vTraffic", gadrop:"vGa", renov:"vRenov",
               build:"vBuild", mult:"vMult", infl:"vInfl", spread:"vSpread", debtx:"vDebtx", years:"vYears" };
 
 function preset(name) {
   const sets = {
-    base: {opens:55, openspct:0.08, auv:2.8, margin:0.19, traffic:0, gadrop:0.004, renov:0.015, build:1.8, mult:14, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
-    bull: {opens:65, openspct:0.10, auv:3.0, margin:0.195, traffic:0.01, gadrop:0.005, renov:0.012, build:1.8, mult:12, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
-    bear: {opens:50, openspct:0.06, auv:2.5, margin:0.18, traffic:-0.01, gadrop:0.002, renov:0.02, build:2.0, mult:9, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
+    base: {opens:55, openspct:0.08, auv:2.8, margin:0.19, mchg:0, traffic:0, gadrop:0.004, renov:0.015, build:1.8, mult:14, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
+    bull: {opens:65, openspct:0.10, auv:3.0, margin:0.195, mchg:0.002, traffic:0.01, gadrop:0.005, renov:0.012, build:1.8, mult:12, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
+    bear: {opens:50, openspct:0.06, auv:2.5, margin:0.175, mchg:-0.002, traffic:-0.01, gadrop:0.002, renov:0.02, build:2.0, mult:9, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id]; });
@@ -196,7 +200,7 @@ function model(a) {
     const traf = Math.pow(1 + a.traffic, i + 1);
     const revReal = OLD_N * OLD_AUV + newRev;
     const rev = revReal * traf * infl * (rec ? 0.95 : 1);
-    const margin = a.margin + 0.35 * (traf - 1) - (rec ? 0.02 : 0);
+    const margin = a.margin + a.mchg * (i + 1) - (rec ? 0.02 : 0);
     const gaPct = Math.max(0.100 - a.gadrop * (i + 1), 0.04);
     const FR_EBITDA = 21; // 84 franchised stores (79 + 5 committed 2027 opens), royalties flat forever
     const ebitda = rev * (margin - gaPct) + FR_EBITDA;
