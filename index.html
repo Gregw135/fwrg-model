@@ -16,7 +16,8 @@
   .stat .v { font-size:30px; font-weight:500; }
   .stat .l { font-size:12px; color:var(--muted); }
   canvas { width:100%; height:auto; margin:10px 0 24px; }
-  .controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px 28px; margin-bottom:8px; }
+  .controls { display:grid; grid-template-columns:repeat(3,1fr); gap:14px 28px; margin-bottom:8px; }
+  @media (max-width:700px) { .controls { grid-template-columns:1fr; } }
   .ctl label { font-size:13px; color:var(--sec); display:flex; justify-content:space-between; }
   .ctl label b { color:var(--ink); font-weight:500; }
   input[type=range] { width:100%; accent-color:var(--blue); }
@@ -51,10 +52,10 @@ All anchor numbers from SEC filings. Presets:
 </div>
 
 <canvas id="chart" width="1720" height="560"></canvas>
+<div style="font-size:13px; color:var(--sec); display:flex; justify-content:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:12px;">Growth in new restaurants:
+  <span><label style="display:inline"><input type="radio" name="gmode" id="gmodeFixed"> fixed per year</label>
+  &nbsp;<label style="display:inline"><input type="radio" name="gmode" id="gmodePct" checked> % of store base</label></span></div>
 <div class="controls">
-  <div class="ctl"><div style="font-size:13px; color:var(--sec); display:flex; justify-content:flex-start; gap:14px; flex-wrap:wrap;">Growth in new restaurants:
-    <span><label style="display:inline"><input type="radio" name="gmode" id="gmodeFixed"> fixed per year</label>
-    &nbsp;<label style="display:inline"><input type="radio" name="gmode" id="gmodePct" checked> % of store base</label></span></div></div>
   <div class="ctl" id="ctlOpens" style="display:none"><label>New restaurants per year <b id="vOpens"></b></label>
     <input type="range" id="opens" min="25" max="100" step="5" value="55"></div>
   <div class="ctl" id="ctlOpensPct"><label>Store growth per year <b id="vOpensPct"></b></label>
