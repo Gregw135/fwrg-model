@@ -92,7 +92,7 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="debtx" min="0" max="2.5" step="0.25" value="2.25"></div>
 </div>
   <div class="toggles">
-  <label><input type="checkbox" id="recess"> two recession years (2031, 2035)</label>
+  <label><input type="checkbox" id="recess"> recession next year, lasting two years (2027–28)</label>
   <label><input type="checkbox" id="buyback" checked> buy back stock with spare cash</label>
   
 </div>
@@ -182,7 +182,7 @@ function model(a) {
   const OLD_N = 586, OLD_AUV = 2.32, TAM = 1e9;
   let newStores = 0, debt = 293, cash = 20, shares = 61.6;
   const cohorts = [];
-  const recYears = a.recess ? [2031, 2035] : [];
+  const recYears = a.recess ? [2027, 2028] : [];
   const rows = [];
   for (let i = 0; i < a.years; i++) {
     const yr = 2027 + i;
