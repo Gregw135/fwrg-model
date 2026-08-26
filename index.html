@@ -35,7 +35,7 @@
 </head>
 <body>
 <h1>First Watch (FWRG): the model</h1>
-<p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: mid-2026 as reported — 665 restaurants (586 company-owned + 79 franchised), $293M of debt, $12.42/share.
+<p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: mid-2026 as reported — 586 company-owned restaurants (plus 79 franchised), $293M of debt, $12.42/share.
 All anchor numbers from SEC filings. Presets:
 <button onclick="preset('base')">base</button>
 <button onclick="preset('bull')">bull</button>
@@ -65,8 +65,8 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="margin" min="0.14" max="0.22" step="0.005" value="0.19"></div>
   <div class="ctl"><label>Traffic growth per year <b id="vTraffic"></b></label>
     <input type="range" id="traffic" min="-0.05" max="0.05" step="0.005" value="0"></div>
-  <div class="ctl"><label>Overhead floor, % of revenue <b id="vGa"></b></label>
-    <input type="range" id="gafloor" min="0.04" max="0.12" step="0.005" value="0.06"></div>
+  <div class="ctl"><label>Overhead decrease/yr (starts 10.0%, floor 4%) <b id="vGa"></b></label>
+    <input type="range" id="gadrop" min="0" max="0.01" step="0.0005" value="0.004"></div>
   <div class="ctl"><label>Renovation, % of revenue <b id="vRenov"></b></label>
     <input type="range" id="renov" min="0.01" max="0.04" step="0.001" value="0.015"></div>
   <div class="ctl"><label>Build cost per store, $M <b id="vBuild"></b></label>
@@ -113,9 +113,12 @@ All anchor numbers from SEC filings. Presets:
 <details>
   <summary>How the model works (and what it deliberately ignores)</summary>
   <div style="margin-top:8px; max-width:700px">
-  <p>The model tracks the 586 company-owned restaurants (the 79 franchised ones only pay royalties,
-  the small flat revenue line). Existing stores keep their current $2.32M average volumes (prices rise with inflation;
-  customer traffic changes by the traffic slider, default flat, compounding across the whole fleet). Openings are either a fixed count per year (the company's stated plan, ~55) or —
+  <p>The model tracks the 586 company-owned restaurants. The 79 franchised ones (84 after next
+  year's five committed openings — no franchise expansion modeled beyond that) contribute a flat
+  $21M of royalty EBITDA every year, no growth, no inflation. Existing stores keep their current $2.32M average volumes (prices rise with inflation;
+  customer traffic changes by the traffic slider, default flat, compounding across the whole fleet). Traffic also
+  moves store margins — fixed costs don't scale with guests — at 0.35pts of margin per cumulative point of traffic,
+  so the margin slider means "margin at flat traffic." Openings are either a fixed count per year (the company's stated plan, ~55) or —
   the default — a constant percentage of the store base (8%), so the opening pace itself
   compounds: 10% for 20 years takes 586 company stores to ~3,900, far past the stated ~2,200-location US market.
   New restaurants open 20% below the
@@ -123,7 +126,7 @@ All anchor numbers from SEC filings. Presets:
   reported restaurant-level margin — rent already deducted. Corporate overhead starts at 10.0% of revenue — last
   quarter's actual cash overhead (reported G&A was 10.9%, of which ~0.9% was non-cash stock compensation;
   that part shows up as the share count growing 1% a year instead, so nothing is counted twice). It declines
-  0.4pt a year to the floor you set. Renovation spending defaults to 1.5% of revenue — light while the fleet is young (Texas Roadhouse, older and open twice the hours, runs ~2.3%). Cash flow first pays debt down (or borrows up) to your debt
+  by the points-per-year you set (default 0.4pt), never below a 4% floor (Chipotle runs ~5.5%, Texas Roadhouse ~3.9%). Renovation spending defaults to 1.5% of revenue — light while the fleet is young (Texas Roadhouse, older and open twice the hours, runs ~2.3%). Cash flow first pays debt down (or borrows up) to your debt
   target, then buys back stock at whatever multiple you set — no cash hoarding. Interest charged is
   inflation plus the spread you set, so debt costs the same in real terms regardless of the inflation slider.
   Inflation defaults to 2% — set it to 0 to see everything in today's dollars, with real returns. Recession
@@ -143,26 +146,26 @@ the only question is which direction. Source: <a href="https://github.com/Gregw1
 
 <script>
 const P0 = 12.42;
-const ids = ["opens","openspct","auv","margin","traffic","gafloor","renov","build","mult","infl","spread","debtx","years"];
+const ids = ["opens","openspct","auv","margin","traffic","gadrop","renov","build","mult","infl","spread","debtx","years"];
 const fmt = {
   opens: v => v, openspct: v => (v*100).toFixed(1) + "%", auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
   traffic: v => (v > 0 ? "+" : "") + (v*100).toFixed(1) + "%",
-  gafloor: v => (v*100).toFixed(1) + "%", renov: v => (v*100).toFixed(1) + "%",
+  gadrop: v => "−" + (v*100).toFixed(2) + "pts", renov: v => (v*100).toFixed(1) + "%",
   build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%",
   spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x",
   years: v => v
 };
-const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin", traffic:"vTraffic", gafloor:"vGa", renov:"vRenov",
+const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin", traffic:"vTraffic", gadrop:"vGa", renov:"vRenov",
               build:"vBuild", mult:"vMult", infl:"vInfl", spread:"vSpread", debtx:"vDebtx", years:"vYears" };
 
 function preset(name) {
   const sets = {
-    base: {opens:55, openspct:0.08, auv:2.8, margin:0.19, traffic:0, gafloor:0.06, renov:0.015, build:1.8, mult:14, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
-    bull: {opens:65, openspct:0.10, auv:3.0, margin:0.195, traffic:0.01, gafloor:0.05, renov:0.012, build:1.8, mult:12, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
-    bear: {opens:50, openspct:0.06, auv:2.5, margin:0.175, traffic:-0.01, gafloor:0.085, renov:0.02, build:2.0, mult:9, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
+    base: {opens:55, openspct:0.08, auv:2.8, margin:0.19, traffic:0, gadrop:0.004, renov:0.015, build:1.8, mult:14, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
+    bull: {opens:65, openspct:0.10, auv:3.0, margin:0.195, traffic:0.01, gadrop:0.005, renov:0.012, build:1.8, mult:12, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
+    bear: {opens:50, openspct:0.06, auv:2.5, margin:0.18, traffic:-0.01, gadrop:0.002, renov:0.02, build:2.0, mult:9, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
   };
   const s = sets[name];
-  ids.forEach(id => { document.getElementById(id).value = s[id === "gafloor" ? "gafloor" : id]; });
+  ids.forEach(id => { document.getElementById(id).value = s[id]; });
   document.getElementById("gmodeFixed").checked = false;
   document.getElementById("gmodePct").checked = true;
   document.getElementById("recess").checked = s.rec;
@@ -190,13 +193,13 @@ function model(a) {
       const ramp = age === 0 ? 0.5 * 0.8 : age === 1 ? 0.9 : 1.0;
       newRev += cohorts[j] * a.auv * ramp;
     }
-    const fr = 20 * infl;
     const traf = Math.pow(1 + a.traffic, i + 1);
     const revReal = OLD_N * OLD_AUV + newRev;
-    const rev = revReal * traf * infl * (rec ? 0.95 : 1) + fr;
-    const margin = a.margin - (rec ? 0.02 : 0);
-    const gaPct = Math.max(0.100 - 0.004 * (i + 1), a.gafloor);
-    const ebitda = (rev - fr) * margin + fr - gaPct * rev;
+    const rev = revReal * traf * infl * (rec ? 0.95 : 1);
+    const margin = a.margin + 0.35 * (traf - 1) - (rec ? 0.02 : 0);
+    const gaPct = Math.max(0.100 - a.gadrop * (i + 1), 0.04);
+    const FR_EBITDA = 21; // 84 franchised stores (79 + 5 committed 2027 opens), royalties flat forever
+    const ebitda = rev * (margin - gaPct) + FR_EBITDA;
     const renov = a.renov * rev;
     const gcapex = opens * (a.build + 0.235) * infl;
     const interest = debt * (a.infl + a.spread / 100);
@@ -213,14 +216,14 @@ function model(a) {
     let price = Math.max(eq, 0) / shares;
     if (rem > 0 && a.buyback && eq > 0) { shares -= rem / price; eq = a.mult * ebitda + cash - debt; price = Math.max(eq, 0) / shares; }
     else if (rem > 0) { cash += rem; price = Math.max(a.mult * ebitda + cash - debt, 0) / shares; }
-    rows.push({yr, stores: OLD_N + newStores, frStores: 79, rev, ebitda, fcf, debt, cash, shares, price, rec, gaPct, ni});
+    rows.push({yr, stores: OLD_N + newStores, rev, ebitda, fcf, debt, cash, shares, price, rec, gaPct, ni});
   }
   return rows;
 }
 
 function update() {
   const a = {};
-  ids.forEach(id => a[id === "gafloor" ? "gafloor" : id] = +document.getElementById(id).value);
+  ids.forEach(id => a[id] = +document.getElementById(id).value);
   a.recess = document.getElementById("recess").checked;
   a.buyback = document.getElementById("buyback").checked;
   a.pctMode = document.getElementById("gmodePct").checked;
@@ -308,9 +311,8 @@ function draw(rows) {
     [{vals: rows.map(r => r.price), color: "#2a78d6", start: P0}],
     {fmt: v => "$" + Math.round(v), years,
      recDots: rows.map((r, i) => r.rec ? [i, r.price] : null).filter(Boolean), include: [P0]});
-  drawSeries("chStores", "restaurants: company, franchised (dashed)",
-    [{vals: rows.map(r => r.stores), color: "#2a78d6", start: 586},
-     {vals: rows.map(r => r.frStores), color: "#eb6834", start: 79, dash: true}],
+  drawSeries("chStores", "restaurants (company-owned)",
+    [{vals: rows.map(r => r.stores), color: "#2a78d6", start: 586}],
     {fmt: v => Math.round(v).toLocaleString(), years});
   drawSeries("chDebt", "debt (orange) and cash (gray)",
     [{vals: rows.map(r => r.debt), color: "#eb6834", start: 295},
@@ -323,7 +325,7 @@ function draw(rows) {
     [{vals: rows.map(r => r.fcf), color: "#2a78d6", start: -8}],
     {fmt: v => "$" + Math.round(v) + "M", years});
   drawSeries("chGa", "overhead, % of revenue",
-    [{vals: rows.map(r => r.gaPct * 100), color: "#888780", start: 10.5}],
+    [{vals: rows.map(r => r.gaPct * 100), color: "#888780", start: 10.0}],
     {fmt: v => v.toFixed(0) + "%", years, include: [12]});
   drawSeries("chNi", "revenue",
     [{vals: rows.map(r => r.rev / 1000), color: "#0b0b0b", start: 1.38}],
