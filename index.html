@@ -53,17 +53,17 @@ All anchor numbers from SEC filings. Presets:
 
 <canvas id="chart" width="1720" height="560"></canvas>
 <div style="font-size:13px; color:var(--sec); display:flex; justify-content:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:12px;">Growth in new restaurants:
-  <span><label style="display:inline"><input type="radio" name="gmode" id="gmodeFixed"> fixed per year</label>
-  &nbsp;<label style="display:inline"><input type="radio" name="gmode" id="gmodePct" checked> % of store base</label></span></div>
+  <span><label style="display:inline"><input type="radio" name="gmode" id="gmodeFixed" checked> fixed per year</label>
+  &nbsp;<label style="display:inline"><input type="radio" name="gmode" id="gmodePct"> % of store base</label></span></div>
 <div class="controls">
-  <div class="ctl" id="ctlOpens" style="display:none"><label>New restaurants per year <b id="vOpens"></b></label>
+  <div class="ctl" id="ctlOpens"><label>New restaurants per year <b id="vOpens"></b></label>
     <input type="range" id="opens" min="25" max="100" step="5" value="55"></div>
-  <div class="ctl" id="ctlOpensPct"><label>Store growth per year <b id="vOpensPct"></b></label>
+  <div class="ctl" id="ctlOpensPct" style="display:none"><label>Store growth per year <b id="vOpensPct"></b></label>
     <input type="range" id="openspct" min="0.02" max="0.15" step="0.005" value="0.08"></div>
   <div class="ctl"><label>New-store sales, $M/yr <b id="vAuv"></b></label>
     <input type="range" id="auv" min="2.2" max="3.2" step="0.05" value="2.8"></div>
   <div class="ctl"><label>Store profit margin <b id="vMargin"></b></label>
-    <input type="range" id="margin" min="0.14" max="0.22" step="0.005" value="0.19"></div>
+    <input type="range" id="margin" min="0.14" max="0.22" step="0.005" value="0.205"></div>
   <div class="ctl"><label>Margin change, pts per year <b id="vMchg"></b></label>
     <input type="range" id="mchg" min="-0.01" max="0.01" step="0.001" value="0"></div>
   <div class="ctl"><label>Traffic growth per year <b id="vTraffic"></b></label>
@@ -165,14 +165,14 @@ const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin"
 
 function preset(name) {
   const sets = {
-    base: {opens:55, openspct:0.08, auv:2.8, margin:0.19, mchg:0, traffic:0, gadrop:0.004, renov:0.015, build:1.8, mult:14, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
+    base: {opens:55, openspct:0.08, auv:2.8, margin:0.205, mchg:0, traffic:0, gadrop:0.004, renov:0.015, build:1.8, mult:14, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
     bull: {opens:65, openspct:0.10, auv:2.9, margin:0.195, mchg:0.002, traffic:0.02, gadrop:0.005, renov:0.015, build:1.8, mult:20, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
     bear: {opens:50, openspct:0.06, auv:2.5, margin:0.175, mchg:-0.002, traffic:-0.01, gadrop:0.002, renov:0.02, build:2.0, mult:9, infl:0.02, spread:2.5, debtx:2.25, years:5, rec:false, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id]; });
-  document.getElementById("gmodeFixed").checked = false;
-  document.getElementById("gmodePct").checked = true;
+  document.getElementById("gmodeFixed").checked = true;
+  document.getElementById("gmodePct").checked = false;
   document.getElementById("recess").checked = s.rec;
   document.getElementById("buyback").checked = s.bb;
   update();
