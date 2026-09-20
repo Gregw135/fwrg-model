@@ -67,11 +67,8 @@ All anchor numbers from SEC filings. Presets:
     <input type="range" id="margin" min="0.14" max="0.22" step="0.005" value="0.19"></div>
   <div class="ctl"><label>Margin change, pts per year <b id="vMchg"></b></label>
     <input type="range" id="mchg" min="-0.01" max="0.01" step="0.001" value="0"></div>
-  <div class="ctl"><label>Underlying traffic growth per year <b id="vTraffic"></b></label>
+  <div class="ctl"><label>Traffic growth per year <b id="vTraffic"></b></label>
     <input type="range" id="traffic" min="-0.05" max="0.05" step="0.005" value="0"></div>
-  <div class="ctl"><label>Sales transfer: share of a new store's sales taken from existing stores <b id="vXfer"></b></label>
-    <input type="range" id="xfer" min="0" max="0.15" step="0.005" value="0.05">
-    <div style="font-size:12px; color:var(--muted); margin-top:2px" id="cocNote"></div></div>
   <div class="ctl"><label>Overhead decrease/yr (starts 10.0%, floor 4%) <b id="vGa"></b></label>
     <input type="range" id="gadrop" min="0" max="0.01" step="0.0005" value="0.004"></div>
   <div class="ctl"><label>Renovation, % of revenue <b id="vRenov"></b></label>
@@ -123,14 +120,8 @@ All anchor numbers from SEC filings. Presets:
   <p>The model tracks the 586 company-owned restaurants. The 79 franchised ones contribute a flat
   $12.5M a year (royalties and fees ran $6.0M in the first half of 2026), no growth, no inflation —
   the ~5 franchise openings a year are ignored. Existing stores keep their current $2.32M average volumes (prices rise with inflation;
-  underlying customer traffic changes by the traffic slider, default flat, compounding across the whole fleet — it affects
-  revenue only). On top of that, each new restaurant takes a share of its sales from existing ones — the sales-transfer
-  slider, default 5% — which the company calls "planned sales transfer" from densifying markets. At 5%, 50 openings
-  a year displace ~$7M from the existing fleet, about half a point of comp traffic — the minimum consistent with the
-  Q2 2026 call, where traffic was −0.4% reported but "would have been positive" without transfer. Lost sales cost
-  40% flow-through (rent and labor don't leave with the guest), not the 19% average margin, so the same slider also
-  marks new-restaurant returns down from the gross figure to the net one shown under it. Management has promised a
-  cannibalization number at the November 2026 Investor Day — plug it in here. Store margin starts at the margin slider and drifts by the margin-change slider each year —
+  customer traffic changes by the traffic slider, default flat, compounding across the whole fleet — it affects
+  revenue only). Store margin starts at the margin slider and drifts by the margin-change slider each year —
   a realistic pairing is ~0.3-0.4pts of margin lost per point of annual traffic decline, since fixed costs
   don't scale with guests. Openings are either a fixed count per year (the company's stated plan from 2027: ~50 company-owned; the ~55–60
   figure often quoted is system-wide including franchisees) or —
@@ -170,28 +161,27 @@ const P0 = 12.42;
 const FR_EBITDA = 12.5;  // franchise royalties + fees: $6.0M in H1'26 (Q2 10-Q) → ~$12.5M/yr, held flat (no growth, no inflation)
 const DA_PCT = 0.063;    // depreciation & amortization, % of revenue (H1'26: $43.2M on $685.6M)
 const SBC_PCT = 0.01;    // stock comp, % of revenue (H1'26: $7.0M expense; 1.14M RSUs granted at $12.33)
-const XFER_FT = 0.40;    // flow-through on sales lost by an existing store to a new one (rent/labor don't leave)
 const GUIDE_LO = 133, GUIDE_HI = 136; // FY2026 adjusted-EBITDA guidance (Aug 4, 2026)
 // Calibration: the model's 2026 starting point at the chosen margin, before any new stores
 function ebitda2026(margin) { return 586 * 2.32 * (margin - 0.100) + FR_EBITDA; }
-const ids = ["opens","openspct","auv","margin","mchg","traffic","xfer","gadrop","renov","build","mult","infl","spread","debtx","years"];
+const ids = ["opens","openspct","auv","margin","mchg","traffic","gadrop","renov","build","mult","infl","spread","debtx","years"];
 const fmt = {
   opens: v => v, openspct: v => (v*100).toFixed(1) + "%", auv: v => "$" + (+v).toFixed(2) + "M", margin: v => (v*100).toFixed(1) + "%",
-  traffic: v => (v > 0 ? "+" : "") + (v*100).toFixed(1) + "%", xfer: v => (v*100).toFixed(1) + "%",
+  traffic: v => (v > 0 ? "+" : "") + (v*100).toFixed(1) + "%",
   mchg: v => (v > 0 ? "+" : "") + (v*100).toFixed(1) + "pts",
   gadrop: v => "−" + (v*100).toFixed(2) + "pts", renov: v => (v*100).toFixed(1) + "%",
   build: v => "$" + (+v).toFixed(1) + "M", mult: v => (+v).toFixed(1) + "x", infl: v => (v*100).toFixed(2) + "%",
   spread: v => "+" + (+v).toFixed(1) + "pts", debtx: v => (+v).toFixed(2) + "x",
   years: v => v
 };
-const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin", mchg:"vMchg", traffic:"vTraffic", xfer:"vXfer", gadrop:"vGa", renov:"vRenov",
+const lbl = { opens:"vOpens", openspct:"vOpensPct", auv:"vAuv", margin:"vMargin", mchg:"vMchg", traffic:"vTraffic", gadrop:"vGa", renov:"vRenov",
               build:"vBuild", mult:"vMult", infl:"vInfl", spread:"vSpread", debtx:"vDebtx", years:"vYears" };
 
 function preset(name) {
   const sets = {
-    base: {opens:50, openspct:0.08, auv:2.8, margin:0.19, mchg:0, traffic:0, xfer:0.05, gadrop:0.004, renov:0.018, build:1.8, mult:14, infl:0.02, spread:4.5, debtx:1, years:5, rec:false, bb:true},
-    bull: {opens:65, openspct:0.10, auv:2.9, margin:0.195, mchg:0.002, traffic:0.02, xfer:0.025, gadrop:0.005, renov:0.015, build:1.8, mult:20, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
-    bear: {opens:45, openspct:0.06, auv:2.5, margin:0.175, mchg:-0.002, traffic:-0.01, xfer:0.10, gadrop:0.002, renov:0.02, build:2.0, mult:9, infl:0.02, spread:4.5, debtx:1, years:5, rec:false, bb:true},
+    base: {opens:50, openspct:0.08, auv:2.8, margin:0.19, mchg:0, traffic:0, gadrop:0.004, renov:0.018, build:1.8, mult:14, infl:0.02, spread:4.5, debtx:1, years:5, rec:false, bb:true},
+    bull: {opens:65, openspct:0.10, auv:2.9, margin:0.195, mchg:0.002, traffic:0.02, gadrop:0.005, renov:0.015, build:1.8, mult:20, infl:0.02, spread:4.5, debtx:2.25, years:5, rec:false, bb:true},
+    bear: {opens:45, openspct:0.06, auv:2.5, margin:0.175, mchg:-0.002, traffic:-0.01, gadrop:0.002, renov:0.02, build:2.0, mult:9, infl:0.02, spread:4.5, debtx:1, years:5, rec:false, bb:true},
   };
   const s = sets[name];
   ids.forEach(id => { document.getElementById(id).value = s[id]; });
@@ -204,7 +194,7 @@ function preset(name) {
 
 function model(a) {
   const OLD_N = 586, OLD_AUV = 2.32, TAM = 1e9;
-  let newStores = 0, debt = 293, cash = 20, shares = 61.6, prevPrice = P0, prevXfer = 0, prevRevReal = OLD_N * OLD_AUV;
+  let newStores = 0, debt = 293, cash = 20, shares = 61.6, prevPrice = P0;
   const cohorts = [];
   const recYears = a.recess ? [2027, 2028] : [];
   const rows = [];
@@ -223,14 +213,11 @@ function model(a) {
       newRev += cohorts[j] * a.auv * ramp;
     }
     const traf = Math.pow(1 + a.traffic, i + 1);
-    const xfer = a.xfer * newRev; // sales displaced from the existing fleet, cumulative (grows as each class ramps)
-    const compDrag = -(xfer - prevXfer) / prevRevReal; // this year's incremental transfer as comp-traffic points
-    const revReal = OLD_N * OLD_AUV + newRev - xfer;
+    const revReal = OLD_N * OLD_AUV + newRev;
     const rev = revReal * traf * infl * (rec ? 0.95 : 1);
     const margin = a.margin + a.mchg * (i + 1) - (rec ? 0.02 : 0);
     const gaPct = Math.max(0.100 - a.gadrop * (i + 1), 0.04);
-    const scale = traf * infl * (rec ? 0.95 : 1);
-    const ebitda = rev * (margin - gaPct) + FR_EBITDA - (XFER_FT - margin) * xfer * scale; // lost sales cost 40% flow-through, not the 19% average
+    const ebitda = rev * (margin - gaPct) + FR_EBITDA;
     const renov = a.renov * rev;
     const gcapex = opens * a.build * infl; // pre-opening spend is already inside the store margin (RLOP is reported after pre-opening expense)
     const interest = debt * (a.infl + a.spread / 100);
@@ -248,8 +235,8 @@ function model(a) {
     let price = Math.max(eq, 0) / shares;
     if (rem > 0 && a.buyback && eq > 0) { shares -= rem / price; eq = a.mult * ebitda + cash - debt; price = Math.max(eq, 0) / shares; }
     else if (rem > 0) { cash += rem; price = Math.max(a.mult * ebitda + cash - debt, 0) / shares; }
-    prevPrice = Math.max(price, 0.01); prevXfer = xfer; prevRevReal = revReal;
-    rows.push({yr, stores: OLD_N + newStores, rev, ebitda, fcf, debt, cash, shares, price, rec, gaPct, ni, compDrag});
+    prevPrice = Math.max(price, 0.01);
+    rows.push({yr, stores: OLD_N + newStores, rev, ebitda, fcf, debt, cash, shares, price, rec, gaPct, ni});
   }
   return rows;
 }
@@ -276,16 +263,14 @@ function update() {
   document.getElementById("oMult").textContent = (+a.mult).toFixed(1) + "x";
   document.getElementById("oShares").textContent = last.shares.toFixed(1) + "M";
   document.getElementById("o3yr").textContent = c3 === null ? "–" : (c3 * 100).toFixed(1) + "%";
-  const cocGross = a.auv * a.margin / a.build, cocNet = (a.auv * a.margin - a.xfer * a.auv * XFER_FT) / a.build;
-  document.getElementById("cocNote").textContent = "New-restaurant return on build cost: " + (cocNet*100).toFixed(1) + "% net of transfer (" + (cocGross*100).toFixed(1) + "% gross); comp drag at run rate ≈ −" + (a.xfer * (a.pctMode ? a.openspct * 586 : a.opens) * a.auv / (586 * 2.32) * 100).toFixed(2) + "pts/yr";
   const e26 = ebitda2026(a.margin), inGuide = e26 >= GUIDE_LO - 1 && e26 <= GUIDE_HI + 1;
   document.getElementById("calib").innerHTML = "Calibration: at this store margin the model's 2026 EBITDA is $" + Math.round(e26) +
     "M vs the company's $" + GUIDE_LO + "–" + GUIDE_HI + "M guidance" + (inGuide ? " ✓" : (e26 < GUIDE_LO ? " (below it" : " (above it") + " — the margin slider is the calibration knob)");
   draw(rows);
   const tbl = document.getElementById("tbl");
-  let h = "<tr><th>year</th><th>stores</th><th>revenue</th><th>comp drag (transfer)</th><th>EBITDA</th><th>free cash</th><th>debt</th><th>shares</th><th>price</th></tr>";
+  let h = "<tr><th>year</th><th>stores</th><th>revenue</th><th>EBITDA</th><th>free cash</th><th>debt</th><th>shares</th><th>price</th></tr>";
   rows.forEach(r => {
-    h += `<tr${r.rec ? ' style="color:#a32d2d"' : ''}><td>${r.yr}${r.rec ? " (recession)" : ""}</td><td>${r.stores}</td><td>$${Math.round(r.rev).toLocaleString()}M</td><td>${(r.compDrag*100).toFixed(2)}pts</td><td>$${Math.round(r.ebitda)}M</td><td>$${Math.round(r.fcf)}M</td><td>$${Math.round(r.debt)}M</td><td>${r.shares.toFixed(1)}M</td><td>$${r.price.toFixed(2)}</td></tr>`;
+    h += `<tr${r.rec ? ' style="color:#a32d2d"' : ''}><td>${r.yr}${r.rec ? " (recession)" : ""}</td><td>${r.stores}</td><td>$${Math.round(r.rev).toLocaleString()}M</td><td>$${Math.round(r.ebitda)}M</td><td>$${Math.round(r.fcf)}M</td><td>$${Math.round(r.debt)}M</td><td>${r.shares.toFixed(1)}M</td><td>$${r.price.toFixed(2)}</td></tr>`;
   });
   tbl.innerHTML = h;
 }
