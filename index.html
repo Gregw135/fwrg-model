@@ -36,7 +36,7 @@
 </head>
 <body>
 <h1>First Watch (FWRG): the model</h1>
-<p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: mid-2026 as reported — 586 company-owned restaurants (plus 79 franchised), $293M of debt, $12.42/share.
+<p class="sub">Adjust the assumptions; everything recomputes instantly. Starting point: mid-2026 as reported — 586 company-owned restaurants (plus 79 franchised), $293M of debt; share price $10.20 (Sept 2026).
 All anchor numbers from SEC filings. Presets:
 <button onclick="preset('base')">base</button>
 <button onclick="preset('bull')">bull</button>
@@ -157,7 +157,7 @@ Aug 2026 investor deck). This is a toy model for a blog post, not investment adv
 the only question is which direction. Source: <a href="https://github.com/Gregw135/fwrg-model">github.com/Gregw135/fwrg-model</a></p>
 
 <script>
-const P0 = 12.42;
+const P0 = 10.20; // share price, Sept 2026
 const FR_EBITDA = 12.5;  // franchise royalties + fees: $6.0M in H1'26 (Q2 10-Q) → ~$12.5M/yr, held flat (no growth, no inflation)
 const DA_PCT = 0.063;    // depreciation & amortization, % of revenue (H1'26: $43.2M on $685.6M)
 const SBC_PCT = 0.01;    // stock comp, % of revenue (H1'26: $7.0M expense; 1.14M RSUs granted at $12.33)
