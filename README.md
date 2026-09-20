@@ -4,7 +4,7 @@ Live page: https://gregw135.github.io/fwrg-model/
 
 A toy model accompanying a blog writeup on First Watch Restaurant Group ($FWRG).
 Two store cohorts (existing fleet at current volumes, new stores at the company's
-$2.8M target), a capital-allocation waterfall (debt to 1x EBITDA → $50M cash →
+$2.8M target), a capital-allocation waterfall (debt to 1x EBITDA →
 buybacks at your chosen multiple), optional recession years, and sliders for the
 assumptions that matter. Openings can be a fixed count per year (the company's
 stated plan) or a constant percentage of the store base — the compounding
