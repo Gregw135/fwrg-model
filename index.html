@@ -133,7 +133,7 @@ All anchor numbers from SEC filings. Presets:
   don't scale with guests. Openings are either a fixed count per year (the company's stated plan from 2027: ~50 company-owned; the ~55–60
   figure often quoted is system-wide including franchisees) or —
   the default — a constant percentage of the store base (8%), so the opening pace itself
-  compounds: 10% for 20 years takes 586 company stores to ~3,900, far past the stated ~2,200-location US market.
+  compounds: 10% for 20 years would take 586 company stores to ~3,900, far past the stated ~2,200-location US market — the model stops at that cap.
   New restaurants open 20% below the
   company's $2.8M target and ramp to it by year three (half-weighted in the opening year for mid-year openings). Store profit is First Watch's
   reported restaurant-level margin — rent and pre-opening costs already deducted (the reported reconciliation adds
@@ -152,8 +152,8 @@ All anchor numbers from SEC filings. Presets:
   Interest charged is inflation plus the spread you set (default +4.5pts ≈ 6.5%, close to today's term loan at 6.59%
   and revolver at 7.24%), so debt costs the same in real terms regardless of the inflation slider.
   Inflation defaults to 2% — set it to 0 to see everything in today's dollars, with real returns. Recession
-  years knock 5% off traffic, 2 points off margins, and halve openings. Store count is NOT capped — past ~2,000 company restaurants you're
-  betting the whitespace is bigger than management's stated 2,200-location market. Taxes: 24% of profit after interest and depreciation (6.3% of revenue, the current rate — so new builds shield
+  years knock 5% off traffic, 2 points off margins, and halve openings. Store count is capped at management's stated ~2,200-location US market
+  (2,121 company-owned plus the 79 franchised); once it's full, openings stop and spare cash buys back stock. Taxes: 24% of profit after interest and depreciation (6.3% of revenue, the current rate — so new builds shield
   income the way they do in real life; the company's unused FICA tip credits, which would cut cash taxes further, are ignored). If the settings drive the company's
   value below its debt, the share price floors at zero — equity holders can't lose more than everything.</p>
   <p style="margin-top:8px">Things to try: move the multiple slider with buybacks on, then off — with buybacks on, the
@@ -204,7 +204,7 @@ function preset(name) {
 }
 
 function model(a) {
-  const OLD_N = 586, OLD_AUV = 2.32, TAM = 1e9;
+  const OLD_N = 586, OLD_AUV = 2.32, TAM = 2200 - 79; // management's ~2,200-location US market, less the 79 franchised (held flat)
   let newStores = 0, debt = 293, cash = 20, shares = 61.6, prevPrice = P0;
   const cohorts = [];
   const recYears = a.recess ? [2027, 2028] : [];
